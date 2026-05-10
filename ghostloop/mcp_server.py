@@ -161,11 +161,44 @@ def run_mcp_server(
     *,
     server_name: str = "ghostloop",
     transport: str = "stdio",
+    host: str = "127.0.0.1",
+    port: int = 8765,
+    mount_path: str | None = None,
 ) -> None:
     """Construct + run the MCP server. Blocks; exits when the client disconnects.
 
-    ``transport='stdio'`` is the default for Claude Desktop / Cursor. Future
-    transports (sse, streamable-http) land when FastMCP exposes them.
+    Three transports supported by FastMCP:
+
+      - ``stdio`` (default) — desktop clients spawn the server as a
+        subprocess and speak MCP through stdin/stdout. Right for
+        Claude Desktop, Cursor, Continue, Cline, Zed, Gemini CLI on
+        the same machine.
+      - ``sse`` — server-sent events over HTTP. The server binds to
+        ``host:port`` and remote clients connect via URL. Right for
+        mobile + cross-machine setups + browser-based MCP clients.
+      - ``streamable-http`` — the newer HTTP transport (replaces SSE
+        going forward). Same host/port shape; preferred when both
+        ends speak it.
+
+    Pick stdio for desktop, streamable-http for mobile / remote. The
+    server, the runtime, and every safety gate are unchanged across
+    transports — only the wire protocol differs.
     """
     server = build_mcp_server(runtime, server_name=server_name)
-    server.run(transport=transport)
+    if transport in ("sse", "streamable-http"):
+        # Export host / port via FastMCP's settings before running so
+        # the bound port matches the user's intent. FastMCP defaults to
+        # 127.0.0.1:8000; we expose explicit host/port so users can
+        # bind to 0.0.0.0 for remote-access setups.
+        try:
+            server.settings.host = host
+            server.settings.port = port
+        except AttributeError:
+            # Older FastMCP — fall back to env vars before .run().
+            import os as _os
+            _os.environ.setdefault("FASTMCP_HOST", host)
+            _os.environ.setdefault("FASTMCP_PORT", str(port))
+    if mount_path is not None:
+        server.run(transport=transport, mount_path=mount_path)
+    else:
+        server.run(transport=transport)

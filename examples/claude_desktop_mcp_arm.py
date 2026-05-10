@@ -1,44 +1,43 @@
-"""Claude Desktop -> ghostloop -> robot arm, end-to-end.
+"""MCP-server entry point for ghostloop. Drive a robot arm from any MCP client.
 
-This is the canonical "I want Claude to drive a robot through ghostloop's
-safety pipeline" entry point. Claude Desktop (or Cursor / any MCP client)
-launches this file as a stdio subprocess, the script constructs a Runtime
-with a Backend + safety pipeline, and exposes every Primitive as an MCP
-tool the assistant can call.
+Works with every MCP-aware assistant — Claude Desktop, Cursor, Continue,
+Cline, Zed, Gemini CLI, plus any future client that speaks the protocol —
+because MCP is the protocol; ghostloop is the server.
+
+Three transports, picked via GHOSTLOOP_TRANSPORT:
+
+  - ``stdio`` (default)        for desktop clients on the same machine.
+                                The client spawns this script as a subprocess.
+  - ``streamable-http``         the modern HTTP transport. Bind once, then
+                                any number of remote clients (including mobile
+                                MCP apps + browser-based UIs) connect via URL.
+  - ``sse``                     legacy server-sent events HTTP. Same host:port
+                                shape. Use only if your client doesn't yet
+                                speak streamable-http.
+
+Three backends, picked via GHOSTLOOP_BACKEND:
+
+  - ``mock`` (default)   zero install, in-memory. Try it here first.
+  - ``mujoco``           real physics in MuJoCo. ``pip install ghostloop[mujoco]``.
+  - ``ros2``             real hardware via DDS. ROS 2 + rclpy + arm driver.
 
 Run it standalone to verify it boots:
 
     python3 examples/claude_desktop_mcp_arm.py --selfcheck
 
-Wire it into Claude Desktop by adding this to
-``~/Library/Application Support/Claude/claude_desktop_config.json``
-(macOS) or ``%APPDATA%\\Claude\\claude_desktop_config.json`` (Windows):
+Or stand up the HTTP server:
 
-    {
-      "mcpServers": {
-        "ghostloop": {
-          "command": "python3",
-          "args": ["/absolute/path/to/ghostloop/examples/claude_desktop_mcp_arm.py"]
-        }
-      }
-    }
+    GHOSTLOOP_TRANSPORT=streamable-http \\
+    GHOSTLOOP_HOST=0.0.0.0 GHOSTLOOP_PORT=8765 \\
+    python3 examples/claude_desktop_mcp_arm.py
 
-Restart Claude Desktop. The new conversation gets ``move_to`` / ``pick`` /
-``place`` / ``scan`` / ``state`` / ``recent_trace`` / ``list_primitives``
-tools. Try: "Move to (0.4, 0.0, 0.5), then scan with radius 0.3, then
-move to (0.6, 0.2, 0.5)." The geofence will block any target outside
-[-0.6, 0.6] in xy.
+Then point any MCP client at ``http://<host>:8765/mcp``.
 
-THREE BACKEND CHOICES — pick one by setting GHOSTLOOP_BACKEND below:
-
-  - "mock" (default)   zero install, in-memory. Try it here first.
-  - "mujoco"           real physics in MuJoCo. Needs ``pip install mujoco``
-                       and a model file. See the BACKEND="mujoco" branch.
-  - "ros2"             real hardware via DDS. Needs ROS 2 + rclpy installed
-                       AND a robot driver running. See the "ros2" branch.
-
-The safety pipeline is the SAME across all three backends. That's the whole
-point: prove the policy + tool surface in sim, then promote to the real arm.
+The safety pipeline is the SAME across all backends + all transports.
+That's the whole point: prove the policy + tool surface in sim with one
+client, then promote to a real arm and a different client without
+changing a line of safety-critical code. See examples/claude_desktop_config.json
+for ready-to-paste config snippets per client.
 """
 
 from __future__ import annotations
@@ -217,17 +216,25 @@ def main() -> None:
         print(f"[ghostloop] selfcheck step status={result.status.value} message={result.message}")
         return
 
-    # Default mode: run the MCP server over stdio. Claude Desktop / Cursor
-    # spawn this script and speak MCP through stdin/stdout, so DON'T print
-    # to stdout from anywhere outside the MCP machinery — it'll corrupt
-    # the protocol. Use stderr if you must.
+    # Default mode: run the MCP server. Transport picked from the env so
+    # the same script powers desktop (stdio) AND remote / mobile clients
+    # (streamable-http). DON'T print to stdout outside MCP machinery —
+    # it'll corrupt the stdio protocol. Use stderr if you must.
     from ghostloop.mcp_server import run_mcp_server
+    transport = os.environ.get("GHOSTLOOP_TRANSPORT", "stdio").lower()
+    host = os.environ.get("GHOSTLOOP_HOST", "127.0.0.1")
+    port = int(os.environ.get("GHOSTLOOP_PORT", "8765"))
     runtime = build_runtime()
     print(
-        f"[ghostloop] starting MCP server (backend={runtime.backend.name})...",
+        f"[ghostloop] starting MCP server "
+        f"(backend={runtime.backend.name} transport={transport} "
+        f"{f'@ {host}:{port}' if transport != 'stdio' else ''})...",
         file=sys.stderr,
     )
-    run_mcp_server(runtime, server_name="ghostloop-arm")
+    run_mcp_server(
+        runtime, server_name="ghostloop-arm",
+        transport=transport, host=host, port=port,
+    )
 
 
 if __name__ == "__main__":

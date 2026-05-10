@@ -1,14 +1,44 @@
 {
+  "_documentation": "Sample MCP-client config for ghostloop. Pick the block that matches your client (Claude Desktop / Cursor / Continue / Cline / Zed / Gemini CLI) and your OS. Replace /absolute/path/to/ghostloop with the real path. Restart the client after editing.",
+
+  "_paths_by_client_and_os": {
+    "claude_desktop": {
+      "macOS": "~/Library/Application Support/Claude/claude_desktop_config.json",
+      "Windows": "%APPDATA%\\Claude\\claude_desktop_config.json",
+      "Linux": "~/.config/Claude/claude_desktop_config.json (unofficial; Claude Desktop on Linux is community-built)"
+    },
+    "cursor": {
+      "macOS_Linux": "~/.cursor/mcp.json (or project-local .cursor/mcp.json)",
+      "Windows": "%USERPROFILE%\\.cursor\\mcp.json"
+    },
+    "continue": {
+      "all": "~/.continue/config.yaml — under the mcpServers: key"
+    },
+    "cline": {
+      "all": "VS Code settings.json — cline.mcpServers"
+    },
+    "zed": {
+      "all": "~/.config/zed/settings.json — context_servers"
+    },
+    "gemini_cli": {
+      "all": "~/.gemini/settings.json — mcpServers"
+    }
+  },
+
+  "_stdio_block_works_for_every_client": "Claude Desktop, Cursor, Continue, Cline, Zed, and Gemini CLI all share the same { command, args, env } shape under their respective mcpServers / context_servers keys. The block below works for every single one — paste it into the right config file and restart the client.",
+
   "mcpServers": {
-    "ghostloop": {
+    "ghostloop-mock": {
       "command": "python3",
       "args": [
         "/absolute/path/to/ghostloop/examples/claude_desktop_mcp_arm.py"
       ],
       "env": {
-        "GHOSTLOOP_BACKEND": "mock"
+        "GHOSTLOOP_BACKEND": "mock",
+        "GHOSTLOOP_TRANSPORT": "stdio"
       }
     },
+
     "ghostloop-mujoco": {
       "command": "python3",
       "args": [
@@ -16,9 +46,11 @@
       ],
       "env": {
         "GHOSTLOOP_BACKEND": "mujoco",
+        "GHOSTLOOP_TRANSPORT": "stdio",
         "GHOSTLOOP_MUJOCO_MODEL": "/absolute/path/to/franka_panda.xml"
       }
     },
+
     "ghostloop-real-arm": {
       "command": "python3",
       "args": [
@@ -26,11 +58,25 @@
       ],
       "env": {
         "GHOSTLOOP_BACKEND": "ros2",
+        "GHOSTLOOP_TRANSPORT": "stdio",
         "GHOSTLOOP_ROS2_NODE": "ghostloop_arm",
         "GHOSTLOOP_CMD_VEL": "/cmd_vel",
         "GHOSTLOOP_JOINT_STATES": "/joint_states",
         "GHOSTLOOP_FORCE_TORQUE": "/wrench"
       }
+    },
+
+    "_remote_http_setup_for_mobile_or_remote_clients": "Run the script directly on the host that owns the robot (NOT under the desktop client) so it stays up across desktop restarts. Then any remote / mobile MCP client connects via the URL — not the command/args path. Bind 0.0.0.0 only when you have authentication or a private network. Default 127.0.0.1 is safer.",
+
+    "_run_http_command_examples": {
+      "macOS_Linux": "GHOSTLOOP_BACKEND=mock GHOSTLOOP_TRANSPORT=streamable-http GHOSTLOOP_HOST=0.0.0.0 GHOSTLOOP_PORT=8765 python3 examples/claude_desktop_mcp_arm.py",
+      "Windows_PowerShell": "$env:GHOSTLOOP_BACKEND='mock'; $env:GHOSTLOOP_TRANSPORT='streamable-http'; $env:GHOSTLOOP_HOST='0.0.0.0'; $env:GHOSTLOOP_PORT='8765'; python examples\\claude_desktop_mcp_arm.py",
+      "Windows_cmd": "set GHOSTLOOP_TRANSPORT=streamable-http && set GHOSTLOOP_HOST=0.0.0.0 && set GHOSTLOOP_PORT=8765 && python examples\\claude_desktop_mcp_arm.py"
+    },
+
+    "ghostloop-remote-http": {
+      "url": "http://your-robot-host.local:8765/mcp",
+      "_note": "Use this URL form in MCP clients that support remote HTTP servers (Claude Desktop 0.8+, Cursor latest, mobile MCP clients). The robot host runs the script as shown above; clients just connect."
     }
   }
 }

@@ -153,29 +153,43 @@ PYTHONPATH=. python3 -m pytest tests/
 
 No dependencies beyond Python 3.10+. This proves the runtime, the safety pipeline, the bench harness, and the trace recorder — exactly the same code you'll point at a real arm later.
 
-### 2. Drive a sim arm with Claude Desktop (10 minutes)
+### 2. Drive a robot from any chat client over MCP (10 minutes)
 
-Claude Desktop / Cursor / any MCP client can drive ghostloop through `examples/claude_desktop_mcp_arm.py`. The script constructs a Runtime + safety pipeline + Backend and exposes every Primitive as an MCP tool the assistant can call.
+ghostloop ships a single MCP server (`examples/claude_desktop_mcp_arm.py`) that works with **every MCP-aware client** — the protocol is universal, so the same server speaks to Claude Desktop, Cursor, Continue, Cline, Zed, Gemini CLI, and any future client. Two transports, picked via `GHOSTLOOP_TRANSPORT`:
 
-**Step 1.** Verify the example boots:
+| Transport | When to use | Clients |
+|---|---|---|
+| `stdio` (default) | desktop, same machine | Claude Desktop, Cursor, Continue, Cline, Zed, Gemini CLI |
+| `streamable-http` | remote, mobile, browser, kiosk | any client supporting remote MCP servers |
+
+**Step 1.** Verify the example boots (any OS):
 
 ```bash
-PYTHONPATH=. python3 examples/claude_desktop_mcp_arm.py --selfcheck
+python3 examples/claude_desktop_mcp_arm.py --selfcheck
 # [ghostloop] backend=mock_arm
 # [ghostloop] primitives=['move_to', 'pick', 'place', 'scan']
 # [ghostloop] gates=['RateLimitGate', 'GeofenceGate', 'ForceCapGate', 'ActionSmoothingGate', 'HumanInTheLoopGate']
 # [ghostloop] selfcheck step status=ok ...
 ```
 
-**Step 2.** Install the MCP package:
+**Step 2.** Install the MCP transport package:
 
 ```bash
-pip install ghostloop[mcp]      # or just: pip install mcp
+pip install ghostloop[mcp]      # or: pip install mcp
 ```
 
-**Step 3.** Wire it into Claude Desktop.
+**Step 3.** Wire it into your client. The same `{ command, args, env }` block works for every desktop MCP client — only the **path to the config file** differs:
 
-Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows), copying the relevant block from [`examples/claude_desktop_config.json`](examples/claude_desktop_config.json):
+| Client | macOS | Windows | Linux |
+|---|---|---|---|
+| Claude Desktop | `~/Library/Application Support/Claude/claude_desktop_config.json` | `%APPDATA%\Claude\claude_desktop_config.json` | `~/.config/Claude/claude_desktop_config.json` |
+| Cursor | `~/.cursor/mcp.json` (or project-local `.cursor/mcp.json`) | `%USERPROFILE%\.cursor\mcp.json` | `~/.cursor/mcp.json` |
+| Continue | `~/.continue/config.yaml` (under `mcpServers:`) | same | same |
+| Cline | VS Code `settings.json` → `cline.mcpServers` | same | same |
+| Zed | `~/.config/zed/settings.json` (under `context_servers`) | same | same |
+| Gemini CLI | `~/.gemini/settings.json` (under `mcpServers`) | same | same |
+
+Paste this block into the config file (replace the absolute path):
 
 ```jsonc
 {
@@ -183,17 +197,17 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) o
     "ghostloop": {
       "command": "python3",
       "args": ["/absolute/path/to/ghostloop/examples/claude_desktop_mcp_arm.py"],
-      "env": { "GHOSTLOOP_BACKEND": "mock" }
+      "env": { "GHOSTLOOP_BACKEND": "mock", "GHOSTLOOP_TRANSPORT": "stdio" }
     }
   }
 }
 ```
 
-**Step 4.** Restart Claude Desktop. New conversations get tools: `list_primitives`, `step`, `move_to(x, y, z)`, `pick(object_id)`, `place()`, `scan(radius)`, `state`, `recent_trace(n)`.
+> 💡 On Windows, swap `python3` for `python` (or the absolute path to your interpreter, e.g. `C:\Python313\python.exe`). On macOS, use `python3` from Homebrew or pyenv. Continue + Zed use YAML / JSONC respectively but the field shape is identical.
 
-Try this prompt: *"Use the ghostloop tools to move to (0.4, 0.0, 0.5), then scan with radius 0.3, then move to (0.6, 0.2, 0.5)."* Watch the geofence reject targets outside [-0.6, 0.6].
+**Step 4.** Restart the client. New conversations get the tools: `list_primitives`, `step`, `move_to(x, y, z)`, `pick(object_id)`, `place()`, `scan(radius)`, `state`, `recent_trace(n)`. Try: *"Use the ghostloop tools to move to (0.4, 0.0, 0.5), then scan with radius 0.3, then move to (0.6, 0.2, 0.5)."* Watch the geofence reject targets outside [-0.6, 0.6].
 
-To upgrade from the mock arm to **real physics in MuJoCo**, change one env var:
+**Upgrade from mock to real physics (MuJoCo) — one env var:**
 
 ```jsonc
 "env": {
@@ -201,18 +215,9 @@ To upgrade from the mock arm to **real physics in MuJoCo**, change one env var:
   "GHOSTLOOP_MUJOCO_MODEL": "/absolute/path/to/franka_panda.xml"
 }
 ```
+(`pip install ghostloop[mujoco]` first.)
 
-(install MuJoCo first: `pip install ghostloop[mujoco]`).
-
-### 3. Drive a real arm via ROS 2 (production)
-
-Same script, same MCP contract — only the Backend changes. Prerequisites:
-
-- A ROS 2 distro installed (`apt install ros-humble-desktop`).
-- Your arm's ROS 2 driver running (Franka, UR5e, Kinova, MoveIt 2 — every major arm ships one).
-- `source /opt/ros/humble/setup.bash` in the same shell that launches Claude Desktop, so the subprocess inherits `$AMENT_PREFIX_PATH` and friends.
-
-Then update Claude Desktop config:
+**Upgrade to a real arm via ROS 2:**
 
 ```jsonc
 "env": {
@@ -224,11 +229,64 @@ Then update Claude Desktop config:
 }
 ```
 
-> ⚠ **Before pointing this at a real arm:** open `examples/claude_desktop_mcp_arm.py` and adjust `WORKSPACE_MIN` / `WORKSPACE_MAX` / `MAX_FORCE_N` / `MAX_VELOCITY_MS` to match your arm's reach + payload + safe operating envelope. Keep `HITL_OPERATIONS = ["pick", "place"]` for the first dozen episodes — every grasp will prompt your terminal for approval. Read the trace logs, build trust, then relax HITL.
+Prerequisites: ROS 2 (`apt install ros-humble-desktop` on Ubuntu, the [Robotology Mac install](https://github.com/RoboStack/ros-humble) on macOS, [WSL2 + Ubuntu](https://docs.ros.org/en/humble/Installation/Alternatives/Ubuntu-Install-Binary.html) on Windows), your arm's ROS 2 driver running, and `source /opt/ros/humble/setup.bash` (or `setup.zsh` / `setup.ps1`) in the same shell that launches the client so the subprocess inherits `$AMENT_PREFIX_PATH`.
 
-The default ROS 2 setup ships `publish_twist` / `stop_motion` action helpers; arm-specific primitives (Franka pick/place, UR5e move_to, etc.) are one-file-per-arm. See `ghostloop/backends/ros2.py` for the contract.
+> ⚠ **Before pointing this at a real arm:** open `examples/claude_desktop_mcp_arm.py` and tune `WORKSPACE_MIN` / `WORKSPACE_MAX` / `MAX_FORCE_N` / `MAX_VELOCITY_MS` to match your arm's reach + payload + safe operating envelope. Keep `HITL_OPERATIONS = ["pick", "place"]` on for the first dozen episodes — every grasp will prompt your terminal for approval. Read the trace logs, build trust, then relax HITL.
 
-### 4. Run programmatically
+### 3. Mobile + remote MCP (HTTP transport)
+
+For mobile chat apps (and any client that doesn't run on the same machine as the robot), run ghostloop's MCP server as a long-running HTTP service on the robot host:
+
+```bash
+# macOS / Linux
+GHOSTLOOP_BACKEND=mock GHOSTLOOP_TRANSPORT=streamable-http \
+GHOSTLOOP_HOST=0.0.0.0 GHOSTLOOP_PORT=8765 \
+  python3 examples/claude_desktop_mcp_arm.py
+
+# Windows PowerShell
+$env:GHOSTLOOP_TRANSPORT='streamable-http'; $env:GHOSTLOOP_HOST='0.0.0.0'; $env:GHOSTLOOP_PORT='8765'
+python examples\claude_desktop_mcp_arm.py
+```
+
+Then configure remote-MCP-capable clients with the **URL form** (no `command`/`args`):
+
+```jsonc
+{
+  "mcpServers": {
+    "ghostloop": { "url": "http://your-robot-host.local:8765/mcp" }
+  }
+}
+```
+
+Mobile MCP clients (Claude iOS once it ships remote MCP, plus the growing crop of third-party MCP-aware iOS / Android chat apps) connect via the same URL — no app-side install. For a custom mobile app, use any MCP TypeScript / Swift / Kotlin SDK from [modelcontextprotocol.io](https://modelcontextprotocol.io). The HTTP wire format is the same.
+
+> ⚠ Bind to `0.0.0.0` only on a private network or behind authentication. The default `127.0.0.1` is loopback-only (safer). For internet-exposed setups, put a reverse proxy with TLS + auth in front, or use the production dashboard's `StaticTokenAuth` pattern.
+
+### 4. Without MCP — direct OpenAI-compatible function calling
+
+Already have a model running and don't want to bother with MCP? `examples/direct_llm_arm.py` skips the protocol entirely and uses ghostloop's `LLMPolicy` to drive any OpenAI-compatible chat endpoint via native function calling. Tested against:
+
+- **OpenAI** GPT-4o / GPT-4o-mini
+- **Anthropic** Claude (via the OpenAI-compatible proxy endpoint)
+- **Google Gemini** (via OpenAI-compatible adapter)
+- **Groq** (Llama 3.x, DeepSeek, Mixtral)
+- **Ollama** (local Qwen, Llama, Mistral, GhostLM)
+- **vLLM** + **llama.cpp server** + **GhostLM's multi-vendor server**
+
+```bash
+OPENAI_BASE_URL=https://api.openai.com/v1 OPENAI_API_KEY=sk-... \
+OPENAI_MODEL=gpt-4o-mini \
+  python3 examples/direct_llm_arm.py
+
+# Or local Ollama:
+OPENAI_BASE_URL=http://localhost:11434/v1 OPENAI_API_KEY=ollama \
+OPENAI_MODEL=qwen2.5:14b \
+  python3 examples/direct_llm_arm.py
+```
+
+Same Backend choice (Mock / MuJoCo / ROS 2), same safety pipeline, same trace recorder. Only the LLM-to-tool plumbing differs: in-process via `LLMPolicy` instead of MCP wire protocol.
+
+### 5. Run programmatically
 
 For everything else — bench harnesses, training loops, post-hoc analysis — use ghostloop as a library. Examples below.
 
@@ -511,8 +569,16 @@ ghostloop/
 examples/
   pick_and_place.py                    scripted end-to-end demo
   bench_with_without_geofence.py       paired-comparison demo
-  claude_desktop_mcp_arm.py            Claude Desktop -> ghostloop -> arm   (v1.0)
-  claude_desktop_config.json           sample Claude Desktop MCP config     (v1.0)
+  claude_desktop_mcp_arm.py            MCP server — works with every MCP    (v1.0)
+                                       client, all OSes, all transports
+                                       (stdio / streamable-http / sse)
+  claude_desktop_config.json           cross-client + cross-OS config       (v1.0)
+                                       reference (Claude Desktop / Cursor /
+                                       Continue / Cline / Zed / Gemini CLI)
+  direct_llm_arm.py                    direct OpenAI-compatible function    (v1.0)
+                                       calling — works with OpenAI /
+                                       Anthropic / Gemini / Groq / Ollama
+                                       / vLLM / GhostLM
 
 tests/                                  314 tests (8 live-gated)
   test_core.py                          23
