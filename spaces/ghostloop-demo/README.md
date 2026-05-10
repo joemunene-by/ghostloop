@@ -43,7 +43,7 @@ Intents through the safety pipeline that ships in the library.
    watch the GeofenceGate reject it with a structured reason.
 3. Send `takeoff {"altitude": 1}` on the Tello profile to see the HITL
    gate escalate.
-4. Read the trace event JSON for any call — that's the same shape the
+4. Read the trace event JSON for any call. That's the same shape the
    library emits for replay, diff, query, energy ledger, and judge
    scoring.
 

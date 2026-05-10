@@ -1,4 +1,4 @@
-"""HuggingFace Space — ghostloop control panel.
+"""HuggingFace Space: ghostloop control panel.
 
 Live URL: https://huggingface.co/spaces/Ghostgim/ghostloop-demo
 
@@ -6,10 +6,10 @@ A no-code interface to ghostloop. Visitors pick a robot profile, then
 drive it via:
 
   - Per-primitive dispatch buttons (auto-generated from the profile's
-    registry — no JSON typing required).
+    registry, no JSON typing required).
   - Virtual joystick (D-pad style) for mobile bases / quadrupeds /
     drones.
-  - Free-form Intent dispatch (advanced — JSON args).
+  - Free-form Intent dispatch (advanced: JSON args).
   - Live intervention controls: Pause, Resume, Emergency Stop.
   - Live trace pane that updates after every dispatch.
   - Live state pane showing the backend snapshot.
@@ -48,15 +48,15 @@ from ghostloop.profiles import (
 
 
 PRESETS = {
-    "franka_arm — 7-DOF arm":              franka_arm,
-    "spot — Boston Dynamics quadruped":    spot_quadruped,
-    "tello — quadcopter drone":            tello_drone,
-    "stretch — mobile arm":                stretch_mobile_arm,
-    "humanoid_demo — stationary humanoid": humanoid_demo,
-    "turtlebot — wheeled mobile base":     turtlebot_base,
+    "franka_arm (7-DOF arm)":              franka_arm,
+    "spot (Boston Dynamics quadruped)":    spot_quadruped,
+    "tello (quadcopter drone)":            tello_drone,
+    "stretch (mobile arm)":                stretch_mobile_arm,
+    "humanoid_demo (stationary humanoid)": humanoid_demo,
+    "turtlebot (wheeled mobile base)":     turtlebot_base,
 }
 
-DEFAULT_PROFILE = "franka_arm — 7-DOF arm"
+DEFAULT_PROFILE = "franka_arm (7-DOF arm)"
 
 
 # ---------------------------------------------------------------------------
@@ -133,7 +133,7 @@ DEFAULT_ARGS: dict[str, dict[str, Any]] = {
 
 
 # ---------------------------------------------------------------------------
-# Render helpers — keep all formatting in one place.
+# Render helpers. Keep all formatting in one place.
 # ---------------------------------------------------------------------------
 
 
@@ -141,7 +141,7 @@ def _render_profile_summary(session: dict[str, Any]) -> str:
     profile = session["profile"]
     runtime = session["runtime"]
     return (
-        f"### `{profile.name}` — `{profile.morphology}`\n\n"
+        f"### `{profile.name}` (`{profile.morphology}`)\n\n"
         f"**Backend:** `{runtime.backend.name}` (mock) · "
         f"**Workspace:** `{profile.workspace_bounds}` · "
         f"**Max velocity:** `{profile.max_velocity}` m/s · "
@@ -152,7 +152,7 @@ def _render_profile_summary(session: dict[str, Any]) -> str:
 def _render_primitives_list(session: dict[str, Any]) -> str:
     runtime = session["runtime"]
     return "\n".join(
-        f"- **`{name}`** — {runtime.registry.get(name).description}"
+        f"- **`{name}`**: {runtime.registry.get(name).description}"
         for name in runtime.registry.names()
     )
 
@@ -172,24 +172,24 @@ def _render_state(session: dict[str, Any]) -> str:
 def _render_trace(session: dict[str, Any]) -> str:
     runtime = session["runtime"]
     if not runtime.trace.events:
-        return "_(no events yet — dispatch a primitive to see the trace)_"
+        return "_(no events yet. Dispatch a primitive to see the trace.)_"
     rows = ["| step | intent | decision | gate | result | reason |",
             "|---:|---|:---:|---|:---:|---|"]
     for ev in runtime.trace.events[-12:]:
-        decision_icon = {"allow": "✅", "deny": "🚫", "escalate": "⚠️"}.get(
+        decision_label = {"allow": "OK", "deny": "BLOCKED", "escalate": "WARN"}.get(
             ev.decision.action.value, "?"
         )
-        result_icon = {"ok": "✅", "blocked": "🚫", "error": "❌"}.get(
+        result_label = {"ok": "OK", "blocked": "BLOCKED", "error": "ERR"}.get(
             ev.result.status.value, "?"
         )
         args_compact = json.dumps(ev.intent.args, separators=(",", ":"))
         if len(args_compact) > 40:
-            args_compact = args_compact[:37] + "…"
+            args_compact = args_compact[:37] + "..."
         reason = (ev.decision.reason or ev.result.message or "")[:80]
         rows.append(
             f"| {ev.step} | `{ev.intent.name}` {args_compact} | "
-            f"{decision_icon} | `{ev.decision.gate_name or ''}` | "
-            f"{result_icon} | {reason} |"
+            f"`{decision_label}` | `{ev.decision.gate_name or ''}` | "
+            f"`{result_label}` | {reason} |"
         )
     n = len(runtime.trace.events)
     if n > 12:
@@ -199,13 +199,13 @@ def _render_trace(session: dict[str, Any]) -> str:
 
 def _render_intervention_state(session: dict[str, Any]) -> str:
     state = session["controller"].state
-    icon = {
-        InterventionState.RUNNING:        "🟢",
-        InterventionState.PAUSED:         "⏸️",
-        InterventionState.SWAPPING:       "🔄",
-        InterventionState.EMERGENCY_STOP: "🛑",
-    }.get(state, "?")
-    return f"### {icon} Intervention: `{state.value}`"
+    label = {
+        InterventionState.RUNNING:        "RUNNING",
+        InterventionState.PAUSED:         "PAUSED",
+        InterventionState.SWAPPING:       "SWAPPING",
+        InterventionState.EMERGENCY_STOP: "STOPPED",
+    }.get(state, "UNKNOWN")
+    return f"### Intervention: `{state.value}` [{label}]"
 
 
 def _render_instructions(session: dict[str, Any]) -> str:
@@ -266,7 +266,7 @@ def dispatch_custom(session: dict[str, Any], primitive_name: str, args_json: str
 
 
 def dispatch_drive(session: dict[str, Any], linear_x: float, angular_z: float):
-    """Joystick handler — emits drive(linear_x, angular_z) for mobile / quad."""
+    """Joystick handler. Emits drive(linear_x, angular_z) for mobile / quad."""
     runtime = session["runtime"]
     name = None
     if "drive" in runtime.registry.names():
@@ -325,7 +325,7 @@ def clear_trace(session: dict[str, Any]):
 
 
 with gr.Blocks(
-    title="ghostloop — control panel",
+    title="ghostloop control panel",
     theme=gr.themes.Soft(primary_hue="teal"),
     css="""
     .gl-pad-button { min-height: 56px; font-weight: 600; }
@@ -339,7 +339,7 @@ with gr.Blocks(
 
 Pick a robot profile, then drive it through the safety pipeline. Every
 dispatch goes through `Geofence + ForceCap + ActionSmoothing + RateLimit
-+ HITL` — try sending a `move_to` outside the workspace and watch the
++ HITL`. Try sending a `move_to` outside the workspace and watch the
 geofence reject it.
 
 Sister to **[GhostLM](https://github.com/joemunene-by/GhostLM)** · `pip install ghostloop` · [GitHub](https://github.com/joemunene-by/ghostloop) · [PyPI](https://pypi.org/project/ghostloop/)
@@ -370,7 +370,7 @@ Sister to **[GhostLM](https://github.com/joemunene-by/GhostLM)** · `pip install
         instructions_md = gr.Markdown()
 
     # ---------- Quick-dispatch buttons ----------
-    gr.Markdown("## Dispatch a primitive (one click — uses sensible defaults)")
+    gr.Markdown("## Dispatch a primitive (one click, uses sensible defaults)")
     primitive_buttons: list[gr.Button] = []
     with gr.Row():
         for _ in range(6):
@@ -380,23 +380,23 @@ Sister to **[GhostLM](https://github.com/joemunene-by/GhostLM)** · `pip install
             primitive_buttons.append(gr.Button("", variant="primary", elem_classes="gl-pad-button"))
 
     # ---------- Joystick (D-pad) ----------
-    gr.Markdown("## Virtual joystick — drive / walk / fly / move")
+    gr.Markdown("## Virtual joystick: drive / walk / fly / move")
     with gr.Row():
         with gr.Column(scale=1):
             pass
         with gr.Column(scale=1):
-            joy_forward = gr.Button("⬆ FORWARD", elem_classes="gl-pad-button")
+            joy_forward = gr.Button("FORWARD", elem_classes="gl-pad-button")
         with gr.Column(scale=1):
             pass
     with gr.Row():
-        joy_left = gr.Button("⬅ LEFT", elem_classes="gl-pad-button")
-        joy_stop = gr.Button("◼ STOP", elem_classes="gl-pad-button")
-        joy_right = gr.Button("RIGHT ➡", elem_classes="gl-pad-button")
+        joy_left = gr.Button("LEFT", elem_classes="gl-pad-button")
+        joy_stop = gr.Button("STOP", elem_classes="gl-pad-button")
+        joy_right = gr.Button("RIGHT", elem_classes="gl-pad-button")
     with gr.Row():
         with gr.Column(scale=1):
             pass
         with gr.Column(scale=1):
-            joy_back = gr.Button("⬇ BACK", elem_classes="gl-pad-button")
+            joy_back = gr.Button("BACK", elem_classes="gl-pad-button")
         with gr.Column(scale=1):
             pass
 
@@ -404,9 +404,9 @@ Sister to **[GhostLM](https://github.com/joemunene-by/GhostLM)** · `pip install
     gr.Markdown("## Live intervention")
     intervention_md = gr.Markdown()
     with gr.Row():
-        pause_btn = gr.Button("⏸ Pause", elem_classes="gl-pause")
-        resume_btn = gr.Button("▶ Resume", elem_classes="gl-resume")
-        estop_btn = gr.Button("🛑 EMERGENCY STOP", elem_classes="gl-estop")
+        pause_btn = gr.Button("Pause", elem_classes="gl-pause")
+        resume_btn = gr.Button("Resume", elem_classes="gl-resume")
+        estop_btn = gr.Button("EMERGENCY STOP", elem_classes="gl-estop")
 
     # ---------- Live trace + state ----------
     with gr.Row():
@@ -427,17 +427,17 @@ Sister to **[GhostLM](https://github.com/joemunene-by/GhostLM)** · `pip install
                 value='{"x": 0.4, "y": 0.0, "z": 0.5}',
                 lines=2, scale=3,
             )
-        adv_btn = gr.Button("▶ runtime.step(intent)", variant="secondary")
+        adv_btn = gr.Button("runtime.step(intent)", variant="secondary")
 
     # ---------- Try-this hints ----------
     gr.Markdown("""
 ### Try this:
 
-1. Pick the **`franka_arm`** profile, then click **`move_to`** — it dispatches with `(0.4, 0, 0.5)` and lands inside the workspace ✅. Now expand the **Advanced** accordion and dispatch `move_to` with `{"x": 5.0, "y": 0, "z": 0}` — the GeofenceGate rejects it 🚫.
+1. Pick the **`franka_arm`** profile, then click **`move_to`**. It dispatches with `(0.4, 0, 0.5)` and lands inside the workspace (allowed). Now expand the **Advanced** accordion and dispatch `move_to` with `{"x": 5.0, "y": 0, "z": 0}`. The GeofenceGate rejects it.
 2. Switch to **`spot`**, then drive with the joystick. Each press emits `walk_to(linear_x, 0, angular_z)` through the safety pipeline.
-3. Hit **🛑 EMERGENCY STOP**. Try clicking another primitive — it gets denied. Hit **▶ Resume** to recover.
+3. Hit **EMERGENCY STOP**. Try clicking another primitive: it gets denied. Hit **Resume** to recover.
 
-Every dispatch is recorded in the trace pane below — that's the same `TraceEvent` shape the library exports for replay, diff, query, energy ledger, and LLM-judge scoring.
+Every dispatch is recorded in the trace pane below. That's the same `TraceEvent` shape the library exports for replay, diff, query, energy ledger, and LLM-judge scoring.
 """)
 
     # ---------- Wiring ----------
