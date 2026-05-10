@@ -1,4 +1,4 @@
 # Gradio 5.x: fixes pydub/audioop incompat (Python 3.13) + ships its
 # own working starlette/jinja2 versions.
 gradio>=5.12,<6
-ghostloop>=1.0.1
+ghostloop>=1.0.3

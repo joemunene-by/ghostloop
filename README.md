@@ -710,4 +710,10 @@ MIT. See [LICENSE](LICENSE).
 
 ---
 
+## The ghostloop family
+
+- **[ghostloop-ui](https://github.com/joemunene-by/ghostloop-ui)** — Next.js dashboard talking to `create_production_app`. Fleet view, alarm tray, episode list, Prometheus metrics. No Python on the operator's machine.
+- **[ghostloop-desktop](https://github.com/joemunene-by/ghostloop-desktop)** — Tauri 2 native app wrapping ghostloop-ui. Sidecar Python runtime + native gamepad input via `gilrs` + system tray + e-stop hotkey. Single-file desktop bundles for macOS / Windows / Linux.
+- **[Live demo on HuggingFace](https://huggingface.co/spaces/Ghostgim/ghostloop-demo)** — Gradio control panel, no install. Per-primitive dispatch buttons, virtual joystick, pause/resume/e-stop, live trace pane.
+
 Built by [Joe Munene](https://github.com/joemunene-by) at [Complex Developers](https://github.com/complexdevelopers). Sibling to [GhostLM](https://github.com/joemunene-by/GhostLM), [secure-mcp](https://github.com/joemunene-by/secure-mcp), [ghostguard](https://github.com/joemunene-by/ghostguard), [CyberBench](https://github.com/joemunene-by/cyberbench).
