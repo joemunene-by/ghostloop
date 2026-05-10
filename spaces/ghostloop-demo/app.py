@@ -241,4 +241,13 @@ when something fails.
 
 
 if __name__ == "__main__":
-    demo.launch()
+    # HF Spaces require binding to 0.0.0.0:7860 explicitly. Without
+    # server_name, gradio defaults to 127.0.0.1 and the Space proxy
+    # can't reach the app — see the "localhost is not accessible"
+    # error in earlier deploys.
+    import os
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=int(os.environ.get("PORT", 7860)),
+        show_error=True,
+    )

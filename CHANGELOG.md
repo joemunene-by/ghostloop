@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.0.1] — 2026-05-10 — First PyPI release + automated workflows
+
+First release published via GitHub Actions OIDC trusted publishing. No
+code changes; this version exists to validate the full release path
+end-to-end after PyPI Trusted Publishing was wired up.
+
+What landed in the surrounding commits:
+
+  - GitHub Actions: `publish-pypi.yml` (tag-triggered OIDC publish to
+    PyPI), `publish-hf-space.yml` (auto-deploy to HuggingFace Space
+    on `spaces/ghostloop-demo/**` changes), `ci.yml` (pytest matrix
+    across Python 3.10 / 3.11 / 3.12 / 3.13 + build smoke).
+  - PyPI Trusted Publishing pending publisher set up — no API tokens
+    in the repo. Uploads authenticate via OIDC.
+  - HuggingFace Space deployed: https://huggingface.co/spaces/Ghostgim/ghostloop-demo
+  - Cross-morphology primitive library + `RobotProfile` system + YAML
+    loader so any robot can be described declaratively (already shipped
+    pre-1.0.1; counted in v1.0.0 surface).
+  - MCP server now supports stdio + streamable-http + sse transports,
+    every MCP-aware client, every OS.
+  - Direct OpenAI-compatible function calling escape hatch for
+    non-MCP setups.
+  - 333 tests passing.
+
 ## [1.0.0] — 2026-05-10 — Production: RGB-D Perception + VLA-on-MuJoCo Benchmark + Production Fleet Dashboard
 
 The 1.0 release. Three pillars that close the original roadmap:

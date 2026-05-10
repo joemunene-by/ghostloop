@@ -51,7 +51,7 @@ from .core import (
 from .observations import ObservationBuffer, ObservationRecord
 from .store import EpisodeRow, GhostloopStore, RunRow
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 __all__ = [
     "AsyncPolicyGate",

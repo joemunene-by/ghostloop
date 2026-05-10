@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ghostloop"
-version = "1.0.0"
+version = "1.0.1"
 description = "The agent loop, embodied. A tool-using runtime + fail-closed safety pipeline + sim-first execution harness for embodied AI."
 readme = "README.md"
 license = "MIT"

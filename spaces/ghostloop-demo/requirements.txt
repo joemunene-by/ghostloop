@@ -1,2 +1,6 @@
-gradio>=4.44
-ghostloop>=1.0.0
+# Gradio 5.x: fixes pydub/audioop incompat (Python 3.13) + ships its
+# own working starlette/jinja2 versions. 4.x had hard breaks in the
+# new HF Space dep stack.
+gradio>=5.12,<6
+# Install ghostloop directly from the GitHub release until PyPI publish.
+ghostloop @ git+https://github.com/joemunene-by/ghostloop.git@main
