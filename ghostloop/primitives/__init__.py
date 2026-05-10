@@ -7,6 +7,7 @@ and bench harness can be developed and tested without any sim install.
 """
 
 from .composite import composite_primitive
+from .morphology import MorphologyError, MorphologyRegistry, PrimitiveFactory
 from .motion import move_to, scan
 from .manipulation import pick, place
 from .trajectory import follow_trajectory, linear_interpolate
@@ -19,4 +20,7 @@ __all__ = [
     "place",
     "follow_trajectory",
     "linear_interpolate",
+    "MorphologyError",
+    "MorphologyRegistry",
+    "PrimitiveFactory",
 ]

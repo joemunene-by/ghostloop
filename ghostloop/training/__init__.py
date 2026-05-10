@@ -29,6 +29,11 @@ from .core import (
     Transition,
     train_safe,
 )
+from .hindsight import (
+    HindsightStrategy,
+    hindsight_relabel,
+    sparse_indicator_reward,
+)
 
 __all__ = [
     "LagrangianMultiplier",
@@ -38,4 +43,7 @@ __all__ = [
     "SafeRolloutCollector",
     "Transition",
     "train_safe",
+    "HindsightStrategy",
+    "hindsight_relabel",
+    "sparse_indicator_reward",
 ]

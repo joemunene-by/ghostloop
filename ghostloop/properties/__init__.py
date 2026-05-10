@@ -28,6 +28,7 @@ from .builtins import (
     StaysInsideWorkspace,
 )
 from .combinators import AndProperty, NotProperty, OrProperty
+from .mining import MinedProperty, mine_properties
 from .temporal import (
     Always,
     Eventually,
@@ -59,4 +60,6 @@ __all__ = [
     "decision_action",
     "result_status",
     "state_field_below",
+    "MinedProperty",
+    "mine_properties",
 ]

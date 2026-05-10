@@ -16,7 +16,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import Any
 
-from .core import Decision, Intent, Result
+from ..core import Decision, Intent, Result
 
 
 def otel_available() -> bool:

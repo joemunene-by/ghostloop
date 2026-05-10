@@ -24,6 +24,13 @@ from .catalogue import (
     reach_targets,
     scan_at_targets,
 )
+from .adversarial import (
+    AdversarialResult,
+    EpisodePerturber,
+    cma_es_seeds,
+    grid_seeds,
+    random_seeds,
+)
 from .reward_shaper import (
     CustomReward,
     OnDecision,
@@ -67,4 +74,10 @@ __all__ = [
     # sim2real
     "Sim2RealBench",
     "Sim2RealReport",
+    # adversarial
+    "AdversarialResult",
+    "EpisodePerturber",
+    "cma_es_seeds",
+    "grid_seeds",
+    "random_seeds",
 ]

@@ -1,5 +1,135 @@
 # Changelog
 
+## [0.10.0] — 2026-05-10 — Counterfactual + Causal + LLM-Judge + Adversarial + Mining + Skills + HER + Energy + Morphology
+
+The novel-capabilities release. Nine pillars across the post-hoc
+analysis, training, and operational surfaces — none of which ship in
+any other robotics framework I'm aware of. ghostloop is now the place
+to do counterfactual reasoning about robot behaviour, attribute
+failures to specific events, score traces with an LLM judge, find
+adversarial seeds automatically, mine invariants from successful
+traces, organise primitives into a typed skill graph, train with
+hindsight experience replay, account for energy use per primitive,
+and reuse skills across robot morphologies.
+
+### Counterfactual trace replay (ghostloop/counterfactual.py)
+
+`replay_with_policy(trace, new_policy)` walks a recorded trace and
+asks "what would the new policy have emitted at each step?". Returns
+a `CounterfactualTrace` aligning original-vs-counterfactual intents
+per step, with divergence rate, first-divergence step, and per-step
+args distance. Works against any callable returning Intent | None.
+This is shadow-mode reasoning — for a full counterfactual execution
+plug the new intents into a fresh Runtime + sim Backend.
+
+### Causal failure attribution (ghostloop/causal.py)
+
+`attribute_failure(trace, property)` runs leave-one-out ablation: for
+each event in a failing trace, replay the property without that
+event. Events whose removal makes the property hold get a high
+necessity score; events whose removal leaves the failure unchanged
+get 0.0. `top_k(k)` returns the most-likely root causes. Plus
+`minimal_cause_set(trace, property, max_set_size)` for greedy
+multi-event attribution when a single event isn't enough.
+
+### LLM-as-judge + Heuristic judge (ghostloop/judges/)
+
+Two trace judges:
+
+  - **LLMJudge**: pairs a trace summary with a configurable rubric
+    prompt, hands it to an OpenAI-compatible chat client, parses the
+    structured JSON response into an `LLMJudgement` (score / label /
+    reasoning / per-criterion scores). Default rubric covers task
+    completion, safety adherence, efficiency, recoverability.
+  - **HeuristicJudge**: rule-based weighted predicate scoring for
+    air-gapped CI environments. Pre-baked predicates for
+    no-violations, fraction-allowed, fraction-ok, step-count.
+
+### Adversarial bench generator (ghostloop/bench/adversarial.py)
+
+Three strategies for fuzzing over Episode initial states to find
+failure-prone seeds:
+
+  - `random_seeds(...)` — uniform random sampling.
+  - `grid_seeds(...)` — exhaustive cartesian product.
+  - `cma_es_seeds(...)` — toy stdlib CMA-ES variant that
+    iteratively biases sampling toward failure-maximising regions.
+
+Returns `AdversarialResult`s sorted by descending failure score.
+Promote the high-scoring seeds back into your regression bench.
+
+### Property mining (ghostloop/properties/mining.py)
+
+`mine_properties(traces, ...)` analyses a corpus of successful traces
+and emits candidate invariants:
+
+  - **followup**: "primitive X always followed by Y within W seconds"
+    (high-confidence transitions)
+  - **numeric_bound**: "observation field F never exceeds T"
+    (empirical max + margin)
+  - **workspace_bounds**: "position remains in AABB"
+    (empirical bounding box + padding)
+
+Each `MinedProperty` carries support / confidence / a `promote()`
+method that returns a real `Property` ready to drop into the
+PropertyEngine. Auto-discovered safety claims you can ratchet into
+formal invariants over time.
+
+### Skill graph (ghostloop/skills/)
+
+`SkillGraph` is a typed DAG of skills (primitives or composites) with
+two edge types:
+
+  - prerequisites: skills required before this one runs
+  - refines: optional parent — this skill is a more-specific variant
+
+Kahn's algorithm validates the DAG (no cycles, no unknown deps).
+`required_for`, `descendants`, `coverage` queries answer "what skills
+do I need to support X?" cheaply. Pairs with the morphology registry
+to drive cross-robot reuse.
+
+### Hindsight Experience Relabeling (ghostloop/training/hindsight.py)
+
+Andrychowicz et al. 2017 HER for the v0.8 training harness.
+`hindsight_relabel(rollout, goal_extractor, reward_fn)` re-tags every
+transition's goal with the trajectory's achieved end-state and
+recomputes reward. Four strategies (FINAL / FUTURE / EPISODE /
+RANDOM) for picking which achieved state becomes the new goal. Plus
+`sparse_indicator_reward(threshold)` — the canonical HER reward.
+
+### Energy ledger (ghostloop/telemetry/energy.py)
+
+Per-primitive joule estimation. `PrimitiveEnergyModel` declares a
+callable estimator; helper constructors for constant /
+linear-in-arg / linear-in-duration / linear-in-xyz models cover the
+common shapes. `EnergyLedger.total(trace)`,
+`.by_primitive(trace)`, `.per_step(trace)`,
+`.render_md(trace)` produce battery-budget-style accounting from a
+recorded trace. `default_estimator()` ships sensible defaults for
+the shipped primitives.
+
+### Cross-embodiment morphology registry (ghostloop/primitives/morphology.py)
+
+`MorphologyRegistry` keyed by `(morphology, primitive_name)` lets
+you register `pick` separately for Franka / UR5e / Spot and build
+the right Primitive at deploy time. `coverage(morphology, required)`
+reports which required primitives ARE / AREN'T supported by a given
+morphology. Pairs with the skill graph: same SkillGraph drives every
+morphology, with concrete primitives swapped in per robot.
+
+### telemetry/ package
+
+The flat `ghostloop/telemetry.py` (OpenTelemetry hooks) became the
+`ghostloop/telemetry/` package containing `otel.py` and
+`energy.py`. All existing imports (`from ghostloop.telemetry import
+otel_available, step_span`, etc.) continue to work via the package
+`__init__.py`.
+
+### Tests
+
+33 new tests across all nine surfaces. Total: 296 passed, 8
+live-gated (mujoco / pybullet / gymnasium / ROS2 when not installed).
+
 ## [0.9.0] — 2026-05-10 — ROS2 + Action Smoothing + Safe Projection + Reward Shaper + Sim2Real
 
 Five additions that close the gap between training and deployment.
