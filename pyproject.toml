@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ghostloop"
-version = "0.1.0"
+version = "0.2.0"
 description = "The agent loop, embodied. A tool-using runtime + fail-closed safety pipeline + sim-first execution harness for embodied AI."
 readme = "README.md"
 license = "MIT"
@@ -27,14 +27,15 @@ classifiers = [
     "Topic :: System :: Hardware",
 ]
 
-# v0.1.0 has zero runtime dependencies. Backends pull their own:
-#   pip install ghostloop[mujoco]   # v0.2
-#   pip install ghostloop[pybullet] # v0.3
-#   pip install ghostloop[ros2]     # v0.7
+# Core has zero runtime dependencies. Backends pull their own:
+#   pip install ghostloop[mujoco]   # MuJoCoBackend (v0.2 — shipped)
+#   pip install ghostloop[pybullet] # PyBulletBackend (v0.3 — planned)
+#   pip install ghostloop[ros2]     # ROS2Backend (v0.7 — planned)
 dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest>=7"]
+mujoco = ["mujoco>=3.0"]
 
 [project.urls]
 Homepage = "https://github.com/joemunene-by/ghostloop"

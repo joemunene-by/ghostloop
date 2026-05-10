@@ -1,14 +1,15 @@
 <div align="center">
 
-# ghostloop
+<img src="assets/ghostloop_wordmark.png" alt="ghostloop" width="560">
 
 **The agent loop, embodied.**
 
-A tool-using agent runtime, fail-closed safety pipeline, and sim-first execution harness for embodied AI. Sister project to [GhostLM](https://github.com/joemunene-by/GhostLM).
+A tool-using agent runtime, fail-closed safety pipeline, statistically-rigorous bench harness, and sim-first execution layer for embodied AI. Sister project to [GhostLM](https://github.com/joemunene-by/GhostLM).
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Status](https://img.shields.io/badge/status-v0.1.0%20%E2%80%94%20core%20runtime%20%2B%20policy%20pipeline%20%2B%20mock%20backend%20%2B%2023%20tests-blue.svg)](#)
+[![Status](https://img.shields.io/badge/status-v0.2.0%20%E2%80%94%20MuJoCoBackend%20%2B%20LLMPolicy%20%2B%20bench%20harness-14B8A6.svg)](#)
+[![Tests](https://img.shields.io/badge/tests-64%20passed%2C%205%20live--gated-14B8A6.svg)](#)
 
 </div>
 
@@ -21,9 +22,9 @@ Robotics in 2026 has two healthy ecosystems and a missing middle.
 - **ROS 2** gives you middleware: a message bus, lifecycle management, drivers, navigation. It does not care about LLMs, agents, or modern eval methodology.
 - **VLA models** (Open-X-Embodiment, OpenVLA, π0, RT-2) give you policies: vision-and-language conditioned action heads. They mostly live in research codebases that ship the model weights but not the runtime.
 
-Nobody ships **the layer in between**: a runtime where a model emits high-level intents like `move_to(0.4, 0.2, 0.1)` or `pick("widget-7")`, those intents flow through a **fail-closed safety pipeline** (geofence, rate limit, deny list, eventually human-in-the-loop), the survivors execute on a backend (sim today, hardware later), and every step is captured in a structured **trace** that can be replayed, audited, or scored against a benchmark.
+Nobody ships **the layer in between**: a runtime where a model emits high-level intents like `move_to(0.4, 0.2, 0.1)` or `pick("widget-7")`, those intents flow through a **fail-closed safety pipeline** (geofence, rate limit, deny list, eventually human-in-the-loop), the survivors execute on a backend (sim today, hardware later), and every step is captured in a structured **trace** that can be replayed, audited, or scored against a benchmark with statistical rigor.
 
-That layer is `ghostloop`. The shape is borrowed from `GhostAgent` in [GhostLM](https://github.com/joemunene-by/GhostLM): tool registry, policy gates, structured trace, paired-comparison eval. The novel piece is binding it to robot primitives instead of CVE lookups, and making the runtime backend-agnostic so the same agent loop drives a `MockBackend` today, MuJoCo and PyBullet next, and ROS 2 / direct serial later.
+That layer is `ghostloop`. The shape is borrowed from `GhostAgent` in [GhostLM](https://github.com/joemunene-by/GhostLM): tool registry, policy gates, structured trace, paired-comparison eval. The novel piece is binding it to robot primitives instead of CVE lookups, and making the runtime backend-agnostic so the same agent loop drives a `MockBackend` today, MuJoCo right now, and ROS 2 / direct serial later.
 
 ## Architecture
 
@@ -38,79 +39,155 @@ That layer is `ghostloop`. The shape is borrowed from `GhostAgent` in [GhostLM](
                                               ┌──────────────────────────────┐
                                               │   Trace (JSONL, replayable)  │
                                               └──────────────────────────────┘
+                                                              │
+                                                              ▼
+                                              ┌──────────────────────────────┐
+                                              │ Bench: Wilson CI + McNemar   │
+                                              └──────────────────────────────┘
 ```
-
-Five concepts, all JSON-serialisable:
 
 | Type | Role |
 |---|---|
 | `Intent` | A high-level structured command emitted by a policy: `name`, `args`, `rationale`. |
 | `Primitive` | A backend-bound callable. Has a name, a description, an arg schema (LLM-tool-card friendly). |
 | `PolicyPipeline` | Ordered list of `PolicyGate`s. Fail-closed: any deny short-circuits. |
-| `Backend` | Execution adapter. v0.1 ships `MockBackend`. v0.2 lands MuJoCo. |
+| `Backend` | Execution adapter. v0.1: `MockBackend`. **v0.2: `MuJoCoBackend`.** |
 | `Trace` | Append-only event log with `state_before` / `state_after` per step. JSONL writer included. |
+| **`LLMPolicy`** *(v0.2)* | Any OpenAI-compatible chat endpoint emits Intents through the registry's tool schema. |
+| **`bench`** *(v0.2)* | Episode harness with Wilson 95% CIs, McNemar exact p, Cohen's h, paired comparison. |
 
-## What ships in v0.1.0
+## What ships in v0.2.0
 
-  - **Runtime + registry + trace**: the core loop and the JSON-serialisable event log.
-  - **Three policy gates** (`DenyListGate`, `RateLimitGate`, `GeofenceGate`), composable with deterministic short-circuit semantics.
-  - **MockBackend**: zero-install in-memory backend with 3D position + held object — enough for tests, examples, and the bench harness.
-  - **Four primitives**: `move_to`, `scan`, `pick`, `place`, all bound to `MockBackend`.
-  - **Runnable end-to-end demo**: `examples/pick_and_place.py` drives the full loop, including a deliberate fence violation that the pipeline catches.
-  - **23 tests** covering registry, runtime step semantics, every policy gate, trace serialisation, and edge cases (pick-while-holding, place-when-empty, primitive exceptions caught as ERROR results).
+### Core (unchanged from v0.1)
+  - 13 abstractions: `Intent` / `Primitive` / `Registry` / `Result` / `Decision` / `PolicyGate` / `PolicyPipeline` / `Backend` / `MockBackend` / `TraceEvent` / `Trace` / `Runtime` (+ enums).
+
+### Policies — now four gates
+  - `DenyListGate`: hard-block named primitives (O(1) set lookup)
+  - `RateLimitGate`: per-primitive sliding-window rate limit
+  - `GeofenceGate`: axis-aligned bounding-box workspace limit
+  - **`LLMPolicy`** *(NEW)*: any OpenAI-compatible chat endpoint (Ollama, OpenAI, Anthropic-via-proxy, vLLM, GhostLM's multi-vendor server) emits Intents via the standard tools array. Includes a `done` pseudo-tool for graceful termination. Hallucinated tool calls surface as Intents the runtime resolver blocks (and traces). Best-effort arg coercion (string-floats become floats, string-bools become bools) for weaker models. Zero-SDK dependency: pure `urllib`.
+
+### Backends — sim-first plus MuJoCo
+
+  - `MockBackend`: zero-install in-memory backend.
+  - **`MuJoCoBackend`** *(NEW)*: real-physics backend via Google DeepMind's MuJoCo. Loads MJCF / URDF, exposes end-effector pose + joint state via `snapshot()`, drives `mj_step()` integration. Conditional import — package itself imports cleanly without `mujoco`; `MuJoCoBackend(...)` raises `ImportError` with install guidance only at construction time. Comes with MuJoCo-bound `move_to(x, y, z, duration)` and `scan(radius)` primitives.
+
+### Bench harness *(NEW)*
+
+  - `Episode`: declarative trial — `setup()` returns a Backend, `policy(runtime)` yields Intents (or runs its own loop), `success_predicate(trace, state)` scores it.
+  - `EpisodeRunner`: drives every episode end-to-end, returns `EpisodeResult`s.
+  - `RunReport`: pass count, rate, Wilson 95% CI, Markdown rendering.
+  - `paired_compare(a, b)`: pairs two reports episode-by-episode and computes:
+    - **Wilson 95% CIs** for each rate (well-behaved at p≈0 / p≈1).
+    - **McNemar exact p** via the binomial distribution (numerically stable in log space).
+    - **Cohen's h** effect size with negligible / small / medium / large labels.
+
+### Demos
+
+  - `examples/pick_and_place.py`: 6-step scripted episode against `MockBackend`, includes deliberate fence violation that the safety pipeline catches.
+  - **`examples/bench_with_without_geofence.py`** *(NEW)*: 8-episode bench paired-compared with and without `GeofenceGate`. Fully reproducible output with Wilson CIs, McNemar p, Cohen's h.
+
+### Tests
+
+  - **64 passed, 5 skipped** *(the 5 are the live MuJoCo integration tests, gated on the `mujoco` package being importable so the offline test path stays at zero install cost)*. All in **0.38s**.
 
 ## Quick start
 
 ```bash
-# zero install — run the demo straight from the repo
 git clone https://github.com/joemunene-by/ghostloop
 cd ghostloop
+
+# Demo 1: end-to-end agent loop with safety pipeline (zero install).
 PYTHONPATH=. python3 examples/pick_and_place.py
+
+# Demo 2: paired-comparison bench harness.
+PYTHONPATH=. python3 examples/bench_with_without_geofence.py
 ```
 
-```
-  [OK ] scan       -> scanned 0.5m sphere from (0.0, 0.0, 0.0)
-  [OK ] move_to    -> moved 0.4583 units
-  [OK ] pick       -> picked 'widget-7'
-  [OK ] move_to    -> moved 0.8 units
-  [OK ] place      -> placed 'widget-7'
-  [BLK] move_to    -> geofence: target x=5 outside workspace [-1,1]
-```
+The bench-comparison output:
 
-The sixth intent is a deliberate overshoot. The geofence gate catches it before it reaches the backend; the runtime records a `BLOCKED` event with the gate name and reason in the trace. That's the safety pipeline doing its job.
+```
+# Paired comparison: with-geofence vs no-gates
+Bench: geofence-impact · n=8
+
+| Run           | Passed | Rate   | Wilson 95% CI    |
+| no-gates      | 8      | 100.0% | [67.6%, 100.0%]  |
+| with-geofence | 4      | 50.0%  | [21.5%, 78.5%]   |
+
+Discordant pairs: only-A=4, only-B=0
+McNemar exact p: 0.1250 (not significant — n=4 discordant)
+Cohen's h: −1.571 (large)
+```
 
 ## Use it programmatically
 
+### Run an LLM-driven episode
+
 ```python
 from ghostloop import Intent, MockBackend, PolicyPipeline, PrimitiveRegistry, Runtime
-from ghostloop.policies import DenyListGate, GeofenceGate, RateLimitGate
+from ghostloop.policies import GeofenceGate, LLMPolicyConfig, llm_policy_loop
 from ghostloop.primitives import move_to, pick, place, scan
 
+registry = PrimitiveRegistry([move_to(), scan(), pick(), place()])
 runtime = Runtime(
     backend=MockBackend(),
-    registry=PrimitiveRegistry([move_to(), scan(), pick(), place()]),
+    registry=registry,
     policy_pipeline=PolicyPipeline(gates=[
-        DenyListGate(denied=set()),
-        RateLimitGate(per_minute=600),
         GeofenceGate(min_corner=(-1, -1, 0), max_corner=(1, 1, 1)),
     ]),
 )
-result = runtime.step(Intent("move_to", {"x": 0.5, "y": 0.0, "z": 0.2}))
-print(result.ok, result.observation)
+
+summary = llm_policy_loop(
+    registry=registry,
+    runtime=runtime,
+    goal="Pick widget-7 from (0.4, 0.2, 0.1) and place it at (-0.4, 0.2, 0.1).",
+    config=LLMPolicyConfig(
+        base_url="http://localhost:11434/v1",  # Ollama default
+        model="qwen2.5:14b",
+    ),
+    max_steps=16,
+)
+print(summary["terminated"], summary["steps"])
+runtime.trace.write_jsonl("episode.jsonl")
 ```
 
-`runtime.trace.write_jsonl("episode.jsonl")` writes a header line plus one JSON-per-event for replay or fleet ingestion.
+### Run a paired-comparison bench
+
+```python
+from ghostloop.bench import EpisodeRunner, paired_compare, summarize
+
+a = summarize(EpisodeRunner().run_all(eps_a), run_name="no-gates", bench_name="my-bench")
+b = summarize(EpisodeRunner().run_all(eps_b), run_name="with-fence", bench_name="my-bench")
+print(paired_compare(a, b).render_md())
+```
+
+### Drive a real physics simulation
+
+```python
+from ghostloop import PolicyPipeline, PrimitiveRegistry, Runtime
+from ghostloop.backends import MuJoCoBackend
+from ghostloop.backends.mujoco import move_to, scan
+
+backend = MuJoCoBackend(model_path="franka_panda.xml", end_effector="hand")
+registry = PrimitiveRegistry([move_to(), scan()])
+runtime = Runtime(backend=backend, registry=registry, policy_pipeline=PolicyPipeline())
+
+runtime.step(Intent("move_to", {"x": 0.4, "y": 0.0, "z": 0.5, "duration": 1.0}))
+runtime.step(Intent("scan", {"radius": 0.5}))
+```
+
+Models from the [MuJoCo Menagerie](https://github.com/google-deepmind/mujoco_menagerie) drop in directly: Franka Panda, UR5e, Stretch RE3, Allegro hand, Spot, Aloha bimanual, etc.
 
 ## Roadmap
 
 | Version | Focus |
 |---|---|
-| v0.1.0 (now) | Core abstractions, MockBackend, three policy gates, runnable demo, 23 tests |
-| v0.2 | `MuJoCoBackend` against the [MuJoCo Menagerie](https://github.com/google-deepmind/mujoco_menagerie) (Franka Panda, UR5e, Stretch). Real motion physics. |
-| v0.3 | `PyBulletBackend` for users without MuJoCo. Bench harness with Wilson 95% CIs and McNemar paired comparisons (the GhostBench pattern from GhostLM). |
-| v0.4 | Two more gates: `ForceCapGate` (deny torque > N), `HumanInTheLoopGate` (block until an external review approves). |
-| v0.5 | `LLMPolicy` adapter: any OpenAI / Anthropic / Gemini / Ollama / GhostLM endpoint emits Intents via a tool-call schema, runtime executes them. |
-| v0.6 | `VLABackend` adapter: OpenVLA / π0 / RT-2 emit primitives directly; ghostloop adds the safety + trace + bench layer they're missing. |
+| v0.1.0 | Core abstractions, MockBackend, three policy gates, runnable demo, 23 tests |
+| **v0.2.0 (now)** | **MuJoCoBackend**, **LLMPolicy adapter**, **bench harness with Wilson CIs + McNemar + Cohen's h**, paired-comparison demo, 64 tests |
+| v0.3 | `PyBulletBackend` for users without MuJoCo. Episode catalogue: pick-place, sort, stack, navigate. Trace replay tooling. |
+| v0.4 | Two more gates: `ForceCapGate` (deny torque > N), `HumanInTheLoopGate` (block until external review approves). |
+| v0.5 | `VLABackend` adapter: OpenVLA / π0 / RT-2 emit primitives directly; ghostloop adds the safety + trace + bench layer they're missing. |
+| v0.6 | Vision pipeline: camera primitives, RGB-D fusion, simple object detection bound to backend snapshots. |
 | v0.7 | `ROS2Backend` for real-hardware deployments via DDS. |
 | v0.8 | MCP server: every primitive becomes a callable MCP tool, so Claude Desktop / Cursor / any MCP client can drive the robot through the safety pipeline. |
 | v1.0 | Production deployment story, fleet management dashboard (Next.js + tRPC), end-to-end VLA-on-MuJoCo benchmarks reproducing OpenVLA / π0 numbers under our trace + safety regime. |
@@ -121,21 +198,36 @@ print(result.ok, result.observation)
 ghostloop/
   __init__.py        — public API surface
   core.py            — Intent / Primitive / Runtime / Trace / Decision
-  policies/          — DenyListGate, RateLimitGate, GeofenceGate
-  primitives/        — move_to, scan, pick, place (MockBackend-bound)
-  backends/          — (v0.2: MuJoCo, v0.3: PyBullet, v0.7: ROS 2)
-  traces/            — (v0.3: replay tooling, episode store)
+  policies/
+    deny_list.py     — DenyListGate
+    geofence.py      — GeofenceGate
+    rate_limit.py    — RateLimitGate
+    llm.py           — LLMPolicy + LLMPolicyConfig + llm_policy_loop  (v0.2)
+  primitives/
+    motion.py        — move_to, scan (MockBackend)
+    manipulation.py  — pick, place (MockBackend)
+  backends/
+    mujoco.py        — MuJoCoBackend + move_to + scan (v0.2)
+  bench/             — Episode / RunReport / paired_compare           (v0.2)
+    episode.py       — Episode + EpisodeRunner + EpisodeResult
+    report.py        — RunReport + wilson_ci + summarize
+    compare.py       — PairedComparison + mcnemar_p + cohens_h
 examples/
-  pick_and_place.py  — end-to-end demo; runs against MockBackend
+  pick_and_place.py              — scripted end-to-end demo
+  bench_with_without_geofence.py — paired-comparison demo (v0.2)
 tests/
-  test_core.py       — 23 tests covering runtime, gates, trace
-docs/
-  (incoming v0.2 design notes for the MuJoCo backend)
+  test_core.py                   — 23 tests
+  test_llm_policy.py             — 14 tests (v0.2, urllib mocked)
+  test_bench.py                  — 22 tests (v0.2)
+  test_mujoco_backend.py         — 5 offline + 5 live-gated  (v0.2)
+assets/
+  ghostloop_mark*.png            — favicon-sized + social card variants
+  ghostloop_wordmark*.png        — full lockup
 ```
 
 ## Why this is novel
 
-There are robot frameworks. There are agent frameworks. There is no robot framework that **treats robots as a model with a tool registry, a fail-closed safety gate, and a structured trace log** — the same shape that is now standard for LLM-driven cybersec agents (`secure-mcp`, `ghostguard`, `GhostAgent`). The thesis: as VLA models become the policy substrate, the runtime around them needs the same rigor we already apply to LLM tool use. ghostloop is that runtime.
+There are robot frameworks. There are agent frameworks. There is no robot framework that **treats robots as a model with a tool registry, a fail-closed safety gate, a structured trace log, and statistical bench rigor** — the same shape that is now standard for LLM-driven cybersec agents (`secure-mcp`, `ghostguard`, `GhostAgent`). The thesis: as VLA models become the policy substrate, the runtime around them needs the same rigor we already apply to LLM tool use. ghostloop is that runtime.
 
 ## License
 
