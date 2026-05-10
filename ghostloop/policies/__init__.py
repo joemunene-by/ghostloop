@@ -16,6 +16,18 @@ from .human_in_the_loop import (
 )
 from .llm import LLMPolicy, LLMPolicyConfig, LLMPolicyError, llm_policy_loop
 from .rate_limit import RateLimitGate
+from .vla import (
+    ActionDecoder,
+    DeltaXYZDecoder,
+    VLAPolicy,
+    vla_policy_loop,
+)
+from .workspace import (
+    AxisAlignedBox,
+    ObstacleAvoidanceGate,
+    Sphere,
+    WorkspaceModel,
+)
 
 __all__ = [
     "DenyListGate",
@@ -30,4 +42,14 @@ __all__ = [
     "always_deny",
     "cli_approver",
     "llm_policy_loop",
+    # VLA
+    "ActionDecoder",
+    "DeltaXYZDecoder",
+    "VLAPolicy",
+    "vla_policy_loop",
+    # Workspace + obstacles
+    "AxisAlignedBox",
+    "ObstacleAvoidanceGate",
+    "Sphere",
+    "WorkspaceModel",
 ]

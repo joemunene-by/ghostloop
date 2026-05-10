@@ -1,5 +1,138 @@
 # Changelog
 
+## [0.5.0] — 2026-05-10 — VLAPolicy + properties engine + workspace + trajectories + planners
+
+Five additions that complete the policy / safety / planning surface:
+the VLA model adapter from the original roadmap, declarative trace-level
+safety properties (richer than single-step gates), proper geometric
+workspace + obstacle modelling, trajectory primitives + linear
+interpolation, and a TaskPlanner module for goal -> intent decomposition.
+
+### VLAPolicy (ghostloop/policies/vla.py)
+
+Adapter for OpenVLA / pi-0 / RT-2 and any VLA model that emits action
+vectors. Decoupled into:
+
+  - VLAModel callable: ``(observation_dict) -> action_vector``. Works
+    for local HF checkpoints, remote inference endpoints, modal /
+    vLLM-served models, and hand-rolled scripted policies in tests.
+  - ActionDecoder Protocol: maps action vector + current state to a
+    structured Intent the registry can dispatch.
+  - DeltaXYZDecoder: standard OpenVLA / RT-2 head — first 3 dims are
+    end-effector position deltas, dim 6 is the gripper open/close.
+    Emits ``move_to`` for position deltas above the deadband, ``pick``
+    on gripper close transitions, ``place`` on opens. State-aware
+    (tracks last_gripper) so it doesn't emit duplicate picks.
+  - VLAPolicy: orchestrator with idle-detection termination.
+  - vla_policy_loop: end-to-end driver, returns a summary.
+
+The safety pipeline still gates every emitted Intent. A VLA model can't
+violate the geofence — its delta gets dispatched as a normal move_to,
+the GeofenceGate evaluates the resulting target, and BLOCKED travels
+back through the trace just like for any LLMPolicy / scripted run.
+
+### Properties engine (ghostloop/properties/)
+
+Declarative invariants that span the trace, not single-step gate checks.
+
+  Property Protocol:    name + severity + check(trace) -> PropertyResult.
+  PropertyEngine:       evaluates a list of Properties, summarises with
+                        held / violated / error_violations counts.
+  PropertyResult:       per-property structured violation list.
+  Severity:             INFO / WARN / ERROR (ERROR = ship-blocking).
+
+Four built-in properties:
+
+  StaysInsideWorkspace        every state_after.position must stay in box
+  NeverHoldsTwoObjects        held_object must transition through None
+  NoConsecutiveDuplicateIntents  catch policies stuck in tight loops
+  NeverExceedsRate            per-primitive rate cap on wall-clock timestamps
+
+Use cases: CI gates, bench scoring beyond pass/fail, post-incident
+analysis.
+
+### WorkspaceModel + ObstacleAvoidanceGate (ghostloop/policies/workspace.py)
+
+Real geometry, not just an axis-aligned box.
+
+  Sphere(center, radius, inflation, label):  spherical obstacle with
+                                              optional safety margin
+  AxisAlignedBox(min, max, inflation, label): box obstacle
+  WorkspaceModel(bounds, obstacles):         outer bounds + obstacle list
+  ObstacleAvoidanceGate(workspace):           policy gate that uses it
+
+Targets are valid iff inside outer bounds AND outside every obstacle.
+Inflation radius adds a safety margin without changing the physical
+obstacle shape (a 5cm cup with 2cm inflation rejects targets within 7cm).
+
+### Trajectory primitives (ghostloop/primitives/trajectory.py)
+
+  follow_trajectory(waypoints, dwell_s=0.0):  visit a list of [x,y,z]
+                                                in sequence
+  linear_interpolate(start, end, n=10):       generate evenly-spaced
+                                                waypoints (helper)
+
+Useful when the policy already knows the path (planned, recorded teleop,
+hand-tuned approach) and the safety pipeline should still gate every
+waypoint.
+
+### TaskPlanner module (ghostloop/planning/)
+
+High-level goal -> Intent sequence decomposition. The bench harness
+already accepts any callable that yields Intents; planners give that
+callable a structured shape.
+
+  Planner Protocol:  goal -> PlanResult (name, intents, rationale, metadata)
+  PlanResult:        Intent list + JSON-serialisable metadata
+
+Two built-in planners:
+
+  PickAndPlacePlanner({object_id, pickup, drop}):  scan -> move -> pick
+                                                    -> move -> place;
+                                                    use_trajectory flag
+                                                    swaps single move
+                                                    for follow_trajectory
+  TraversePlanner([waypoints], scan_at_each):      move (+optional scan)
+                                                    per waypoint
+
+Custom planners drop in alongside via the Protocol — LLM-backed and
+search-based planners are obvious next-release adds.
+
+### Tests
+
+  test_v05_additions.py NEW — 32 tests:
+    DeltaXYZDecoder           6
+    VLAPolicy                 2
+    WorkspaceModel            5
+    ObstacleAvoidanceGate     3
+    Trajectory primitives     4
+    Properties engine         6
+    Planning module           6
+
+  Suite: 113 -> 145 passing, 6 skipped (live-only) in 1.73s.
+
+### Pyproject
+
+  version 0.4.0 -> 0.5.0
+  no new optional deps (pure Python additions)
+
+### Roadmap state after this push
+
+Originally-planned v0.5 items:
+  VLABackend adapter ✓ (shipped as VLAPolicy + DeltaXYZDecoder)
+Originally-planned v0.6 items:
+  Vision pipeline (camera primitives) ✓ (shipped in v0.4)
+
+Not on the original roadmap but shipped this release:
+  Declarative properties engine
+  WorkspaceModel + ObstacleAvoidanceGate
+  Trajectory primitives + linear_interpolate
+  TaskPlanner module + PickAndPlacePlanner + TraversePlanner
+
+Roadmap effectively pulled forward by 1.5 versions in one push session.
+
+---
+
 ## [0.4.0] — 2026-05-10 — AsyncRuntime + SQLite store + vision + MCP server + OpenTelemetry
 
 Production-infrastructure release. The pieces that turn ghostloop from

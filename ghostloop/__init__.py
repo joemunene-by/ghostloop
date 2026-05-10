@@ -39,7 +39,7 @@ from .core import (
 )
 from .store import EpisodeRow, GhostloopStore, RunRow
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 __all__ = [
     "AsyncPolicyGate",
