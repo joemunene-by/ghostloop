@@ -1,5 +1,130 @@
 # Changelog
 
+## [0.4.0] — 2026-05-10 — AsyncRuntime + SQLite store + vision + MCP server + OpenTelemetry
+
+Production-infrastructure release. The pieces that turn ghostloop from
+"demo-ready" into "could be deployed at a robotics startup tomorrow":
+async control loops, persistent episode + run history, sensor abstraction,
+MCP exposure to any agent, and OTel observability hooks.
+
+### AsyncRuntime (ghostloop/async_runtime.py)
+
+Coroutine-friendly runtime for control-loop and network workloads. Same
+Intent / Primitive / PolicyPipeline / Backend / Trace surface as Runtime,
+but ``step`` is ``async def`` and supports:
+
+  - AsyncPolicyGate Protocol (awaitable check method).
+  - AsyncPolicyPipeline that mixes sync + async gates transparently
+    via inspect.isawaitable — sync gates pass through unchanged.
+  - Async primitives: any Primitive whose .call is a coroutine function
+    is awaited. Sync primitives stay sync.
+  - control_loop(next_intent, max_steps, rate_hz): closed control loop
+    driven by a callable that returns the next Intent given the previous
+    Result. ``rate_hz`` paces the loop with sleep-correction.
+
+The sync Runtime still ships unchanged for sim / scripted / single-shot
+workloads. AsyncRuntime is for HITL-with-Slack-webhook, ROS 2 backends,
+and real control loops.
+
+### SQLite-backed store (ghostloop/store.py)
+
+Single-file dependency-free persistence — sqlite3 in stdlib, no Postgres
+required. Three tables:
+
+  episodes      — every Trace ever ingested. Full JSONL stored for replay,
+                  metadata extracted into indexed columns.
+  run_reports   — every RunReport ever scored. Per-episode pass/fail in
+                  JSON blob; aggregate rate / Wilson CI indexed.
+  comparisons   — every PairedComparison ever computed.
+
+Content-addressed: re-ingesting the same artefact is a no-op.
+``GhostloopStore`` is both a context manager and direct constructor.
+``EpisodeRow`` / ``RunRow`` dataclasses for typed row access.
+
+### Vision sensors (ghostloop/sensors/)
+
+  - Camera (Protocol): anything that produces CameraFrames on demand.
+  - CameraFrame: JSON-safe metadata (intrinsics, timestamps, shapes,
+    extras) PLUS opaque rgb / depth payload (numpy / PIL / bytes).
+  - CameraIntrinsics: pinhole intrinsics with to_json().
+  - CameraProcessor (Protocol): pluggable post-processor for object
+    detection / depth refinement / segmentation.
+  - MockCamera: in-memory deterministic gradient-RGB + constant-depth
+    camera for tests + sim demos.
+  - capture_camera() Primitive: looks up camera by name on
+    ``backend.cameras``, captures, returns frame metadata in the
+    observation. Falls back to MockCamera when backend has no cameras
+    configured (keeps demos usable without sim setup).
+
+### MCP server (ghostloop/mcp_server.py)
+
+Conditional import — package itself doesn't depend on mcp. Calling
+``run_mcp_server(runtime)`` requires the SDK:
+
+  pip install ghostloop[mcp]
+
+Exposes four general tools (list_primitives, step, recent_trace, state)
+PLUS one auto-tool per Primitive in the registry. Every tool call passes
+through the safety pipeline; blocked actions return structured BLOCKED
+results with gate name + reason. Same FastMCP pattern as GhostLM's MCP
+server.
+
+### Telemetry / OpenTelemetry (ghostloop/telemetry.py)
+
+  pip install ghostloop[otel]
+
+Conditional. ``configure_otel(service_name)`` attaches a Tracer; reads
+OTEL_EXPORTER_OTLP_ENDPOINT etc from env via the standard SDK auto-
+configuration so any production OTel setup (Honeycomb / Jaeger / Grafana
+Tempo / Datadog) just works. ``step_span(intent)`` is a context manager
+that emits a per-step span with intent / decision / result attributes;
+no-op when OTel isn't installed or configured. ``record_decision`` /
+``record_result`` helpers attach the structured fields.
+
+### CLI: 2 new subcommands
+
+  python -m ghostloop store stats [--db PATH]      counts of episodes/runs/comparisons
+  python -m ghostloop store episodes [--db PATH] [--limit N]
+  python -m ghostloop store runs [--db PATH] [--limit N]
+  python -m ghostloop mcp [--name NAME]            run the MCP server (stdio)
+
+  Default db path: ~/.ghostloop/store.db (auto-created).
+
+### Tests
+
+  test_v04_additions.py NEW — 21 tests:
+    AsyncRuntime              6
+    GhostloopStore            5
+    Camera sensors            5
+    Telemetry                 2
+    MCP server (conditional)  3 (1 live-gated on `mcp` install)
+
+  Suite: 93 -> 113 passing, 6 skipped (live MuJoCo + live MCP) in 1.21s.
+
+### Pyproject
+
+  version 0.3.0 -> 0.4.0
+  optional-dependencies:
+    + mcp>=1.0
+    + opentelemetry-api / -sdk / -exporter-otlp >=1.20
+
+### Why this is the "real production" release
+
+  - Async control loops unblock ROS 2 / gRPC / network-IO backends.
+  - Persistent store lets ops ask "how have my policies performed
+    over time" not just "this one bench run".
+  - Camera abstraction is the missing primitive for any vision-based
+    policy (VLA models, object-detection-driven planners).
+  - MCP server makes Claude Desktop / Cursor / any MCP-aware agent a
+    first-class robot driver.
+  - OTel hooks mean a fleet operator can wire ghostloop into existing
+    observability stacks with one env-var.
+
+The runtime that pairs with VLA models is no longer hypothetical;
+production-grade scaffolding ships in this release.
+
+---
+
 ## [0.3.0] — 2026-05-10 — PyBullet + Menagerie loader + episode catalogue + replay + 5 gates + CLI
 
 Six substantial additions in one release. Pulls forward roadmap items v0.3

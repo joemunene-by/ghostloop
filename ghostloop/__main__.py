@@ -133,14 +133,76 @@ def main(argv: list[str] | None = None) -> int:
     rp.add_argument("path", type=Path, help="Path to a trace JSONL written by Trace.write_jsonl()")
     rp.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
+    sp = sub.add_parser("store", help="Inspect the SQLite episode/run store")
+    sp_sub = sp.add_subparsers(dest="store_cmd", required=True)
+    sp_stats = sp_sub.add_parser("stats", help="Counts of episodes / runs / comparisons")
+    sp_stats.add_argument("--db", type=Path, default=Path.home() / ".ghostloop" / "store.db")
+    sp_eps = sp_sub.add_parser("episodes", help="List recent episodes")
+    sp_eps.add_argument("--db", type=Path, default=Path.home() / ".ghostloop" / "store.db")
+    sp_eps.add_argument("--limit", type=int, default=20)
+    sp_runs = sp_sub.add_parser("runs", help="List recent run reports")
+    sp_runs.add_argument("--db", type=Path, default=Path.home() / ".ghostloop" / "store.db")
+    sp_runs.add_argument("--limit", type=int, default=20)
+
+    mp = sub.add_parser("mcp", help="Run the MCP server (stdio transport for Claude Desktop / Cursor)")
+    mp.add_argument("--name", default="ghostloop")
+
     args = p.parse_args(argv)
     handlers = {
         "info": cmd_info,
         "demo": cmd_demo,
         "bench": cmd_bench,
         "replay": cmd_replay,
+        "store": cmd_store,
+        "mcp": cmd_mcp,
     }
     return handlers[args.cmd](args)
+
+
+def cmd_store(args: argparse.Namespace) -> int:
+    from .store import GhostloopStore
+    db = args.db
+    if not db.parent.exists():
+        db.parent.mkdir(parents=True, exist_ok=True)
+    store = GhostloopStore(str(db))
+    if args.store_cmd == "stats":
+        s = store.stats()
+        print(f"Store: {db}")
+        for k, v in s.items():
+            print(f"  {k:<14} {v}")
+    elif args.store_cmd == "episodes":
+        rows = store.list_episodes(limit=args.limit)
+        if not rows:
+            print("(no episodes ingested yet)")
+        for r in rows:
+            print(f"  {r.episode_id[:8]}  backend={r.backend:<8} "
+                  f"steps={r.n_steps:<3} blocked={r.n_blocked} errored={r.n_errored}")
+    elif args.store_cmd == "runs":
+        rows = store.list_runs(limit=args.limit)
+        if not rows:
+            print("(no run reports ingested yet)")
+        for r in rows:
+            print(f"  {r.run_id[:8]}  bench={r.bench_name:<20} run={r.run_name:<14} "
+                  f"{r.passed}/{r.n} = {r.rate:.1%}  CI=[{r.ci_low:.1%},{r.ci_high:.1%}]")
+    store.close()
+    return 0
+
+
+def cmd_mcp(args: argparse.Namespace) -> int:
+    from .core import MockBackend, PolicyPipeline, PrimitiveRegistry, Runtime
+    from .mcp_server import run_mcp_server
+    from .policies import GeofenceGate, RateLimitGate
+    from .primitives import move_to, pick, place, scan
+    runtime = Runtime(
+        backend=MockBackend(),
+        registry=PrimitiveRegistry([move_to(), scan(), pick(), place()]),
+        policy_pipeline=PolicyPipeline(gates=[
+            RateLimitGate(per_minute=600),
+            GeofenceGate(min_corner=(-1, -1, 0), max_corner=(1, 1, 1)),
+        ]),
+    )
+    run_mcp_server(runtime, server_name=args.name)
+    return 0
 
 
 if __name__ == "__main__":

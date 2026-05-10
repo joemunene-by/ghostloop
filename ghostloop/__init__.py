@@ -22,6 +22,7 @@ Designed so a new robot is two files: a ``Backend`` and a registry of
 ``Primitive`` instances bound to that backend's actuators.
 """
 
+from .async_runtime import AsyncPolicyGate, AsyncPolicyPipeline, AsyncRuntime
 from .core import (
     Backend,
     Decision,
@@ -36,12 +37,18 @@ from .core import (
     Trace,
     TraceEvent,
 )
+from .store import EpisodeRow, GhostloopStore, RunRow
 
-__version__ = "0.1.0"
+__version__ = "0.4.0"
 
 __all__ = [
+    "AsyncPolicyGate",
+    "AsyncPolicyPipeline",
+    "AsyncRuntime",
     "Backend",
     "Decision",
+    "EpisodeRow",
+    "GhostloopStore",
     "Intent",
     "MockBackend",
     "PolicyGate",
@@ -49,6 +56,7 @@ __all__ = [
     "Primitive",
     "PrimitiveRegistry",
     "Result",
+    "RunRow",
     "Runtime",
     "Trace",
     "TraceEvent",
