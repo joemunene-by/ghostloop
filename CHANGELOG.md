@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.0.3] — 2026-05-10 — Auto-create GitHub release pages on tag push
+
+The `publish-pypi.yml` workflow now also creates a GitHub release page
+after the PyPI upload succeeds. One tag push, three artifacts in sync:
+
+  1. PyPI release (OIDC trusted publishing).
+  2. HuggingFace Space redeploy (if `spaces/ghostloop-demo/**` changed).
+  3. GitHub release page with the matching CHANGELOG section as the
+     body, the wheel + sdist attached, and the `Latest` flag promoted
+     unless the tag is a pre-release (`-rc`, `-alpha`, `-beta`, `-pre`,
+     `-dev`).
+
+Behind the scenes:
+  - Added `softprops/action-gh-release@v2` step that runs after the
+    PyPI publish.
+  - Added a `notes` step that uses `awk` to extract the CHANGELOG
+    section between `## [X.Y.Z]` and the next `## [` header. Falls
+    back to a generic "see CHANGELOG.md" stub if no matching section
+    exists.
+  - Bumped the job's `contents` permission from `read` to `write` so
+    the action can create the release page.
+
+No code changes to ghostloop itself; this is workflow plumbing.
+
 ## [1.0.2] — 2026-05-10 — Distillation + Deadline Scheduler + Live Intervention + Calibration
 
 Four new pillars that extend the moat past the original v1.0 roadmap.

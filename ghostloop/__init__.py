@@ -65,7 +65,7 @@ from .observations import ObservationBuffer, ObservationRecord
 from .realtime import DeadlineGate, DeadlineMissed, DeadlineMonitor
 from .store import EpisodeRow, GhostloopStore, RunRow
 
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 
 __all__ = [
     "AsyncPolicyGate",

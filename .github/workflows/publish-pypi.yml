@@ -33,7 +33,8 @@ jobs:
     permissions:
       # Required by the official PyPA action for OIDC trusted publishing.
       id-token: write
-      contents: read
+      # Required by softprops/action-gh-release to create the release page.
+      contents: write
 
     steps:
       - name: Checkout
@@ -89,3 +90,78 @@ jobs:
           name: ghostloop-${{ github.ref_name }}
           path: dist/
           retention-days: 90
+
+      - name: Extract CHANGELOG notes for this version
+        # Pulls the section between `## [X.Y.Z]` and the next `## [` header
+        # out of CHANGELOG.md so the GitHub release page mirrors the
+        # changelog entry exactly. If no matching section exists, falls
+        # back to a generic "see CHANGELOG.md" stub so the release still
+        # creates.
+        id: notes
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          NOTES_FILE="$(mktemp)"
+          # Awk grabs the lines from `## [VERSION]` up to (but not
+          # including) the next `## [` header.
+          awk -v v="$VERSION" '
+            $0 ~ "^## \\[" v "\\]" { found=1; print; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > "$NOTES_FILE"
+          if [ ! -s "$NOTES_FILE" ]; then
+            cat > "$NOTES_FILE" <<EOM
+## ghostloop v$VERSION
+
+See [CHANGELOG.md](https://github.com/${GITHUB_REPOSITORY}/blob/main/CHANGELOG.md) for the full notes.
+
+\`\`\`bash
+pip install ghostloop==$VERSION
+\`\`\`
+
+Live demo: https://huggingface.co/spaces/Ghostgim/ghostloop-demo
+EOM
+          fi
+          # Append a footer with install + demo links so every release
+          # page tells the same story.
+          cat >> "$NOTES_FILE" <<EOM
+
+---
+
+## Install
+
+\`\`\`bash
+pip install ghostloop==$VERSION
+\`\`\`
+
+## Live demo
+
+https://huggingface.co/spaces/Ghostgim/ghostloop-demo
+
+## PyPI
+
+https://pypi.org/project/ghostloop/$VERSION/
+EOM
+          echo "notes_file=$NOTES_FILE" >> "$GITHUB_OUTPUT"
+          # Detect pre-release tags (vX.Y.Z-rc1, vX.Y.Z-alpha, etc.).
+          if echo "$VERSION" | grep -qE '-(rc|alpha|beta|pre|dev)'; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub release
+        # Lands every PyPI publish on the GitHub Releases page with the
+        # CHANGELOG section as the body and the wheel + sdist attached.
+        # `make_latest: legacy` defers to the tag-name semver ordering
+        # so non-prereleases auto-promote to "Latest".
+        uses: softprops/action-gh-release@v2
+        with:
+          # ref_name is already the tag like "v1.0.3" — don't double the v.
+          name: "${{ github.ref_name }} — ghostloop"
+          tag_name: ${{ github.ref_name }}
+          body_path: ${{ steps.notes.outputs.notes_file }}
+          files: dist/*
+          draft: false
+          prerelease: ${{ steps.notes.outputs.prerelease == 'true' }}
+          make_latest: legacy
+          fail_on_unmatched_files: true
