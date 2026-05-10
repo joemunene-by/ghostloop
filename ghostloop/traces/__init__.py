@@ -6,6 +6,7 @@ events for analysis, visualisation, regression tests, or fleet ingestion.
 """
 
 from .diff import StepDiff, TraceDiff, diff_events, diff_traces
+from .query import QueryError, compile_query, query
 from .replay import (
     ReplayedEvent,
     TraceHeader,
@@ -19,9 +20,12 @@ __all__ = [
     "StepDiff",
     "TraceDiff",
     "TraceHeader",
+    "QueryError",
+    "compile_query",
     "diff_events",
     "diff_traces",
     "iter_events",
     "load_trace",
+    "query",
     "summarize_trace",
 ]

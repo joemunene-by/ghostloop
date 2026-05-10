@@ -28,6 +28,16 @@ from .builtins import (
     StaysInsideWorkspace,
 )
 from .combinators import AndProperty, NotProperty, OrProperty
+from .temporal import (
+    Always,
+    Eventually,
+    EventPredicate,
+    Until,
+    decision_action,
+    intent_named,
+    result_status,
+    state_field_below,
+)
 
 __all__ = [
     "Property",
@@ -41,4 +51,12 @@ __all__ = [
     "AndProperty",
     "OrProperty",
     "NotProperty",
+    "Always",
+    "Eventually",
+    "Until",
+    "EventPredicate",
+    "intent_named",
+    "decision_action",
+    "result_status",
+    "state_field_below",
 ]

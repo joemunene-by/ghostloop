@@ -18,7 +18,9 @@ from .human_in_the_loop import (
 from .llm import LLMPolicy, LLMPolicyConfig, LLMPolicyError, llm_policy_loop
 from .rate_limit import RateLimitGate
 from .retry import RetryPolicy, is_any_error, is_transient_error
+from .sdf import ConvexPolytope, HalfSpace, signed_distance
 from .time_window import TimeWindowGate, Window
+from .urdf import URDFParseStats, workspace_from_urdf
 from .vla import (
     ActionDecoder,
     DeltaXYZDecoder,
@@ -63,4 +65,11 @@ __all__ = [
     "CooldownGate",
     "TimeWindowGate",
     "Window",
+    # SDF
+    "ConvexPolytope",
+    "HalfSpace",
+    "signed_distance",
+    # URDF
+    "URDFParseStats",
+    "workspace_from_urdf",
 ]

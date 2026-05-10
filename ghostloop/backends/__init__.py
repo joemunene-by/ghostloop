@@ -19,11 +19,14 @@ from .menagerie import (
 )
 from .mujoco import MuJoCoBackend, mujoco_available
 from .pybullet import PyBulletBackend, pybullet_available
+from .randomized import RandomizationConfig, RandomizedBackend
 
 __all__ = [
     "GymnasiumBackend",
     "MuJoCoBackend",
     "PyBulletBackend",
+    "RandomizationConfig",
+    "RandomizedBackend",
     "gymnasium_available",
     "mujoco_available",
     "pybullet_available",

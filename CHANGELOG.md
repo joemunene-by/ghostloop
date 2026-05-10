@@ -1,5 +1,102 @@
 # Changelog
 
+## [0.8.0] — 2026-05-10 — STL + URDF + Domain Randomization + Trace Query + Safe-RL
+
+Five additions across the verification, robot-onboarding, sim2real,
+debugging, and training surfaces. Each one is the kind of capability
+that a real production deployment expects to have: temporal
+specifications, automatic workspace inference, robust transfer,
+operational query, and constrained-MDP training.
+
+### Temporal Signal Logic (ghostloop/properties/temporal.py)
+
+The properties shipped before this release were point-in-time:
+"position is inside the workspace box at every recorded event". Real
+safety claims have *time*. STL fixes that with three combinators that
+operate on a sliding window of trace events:
+
+  Always(phi, window_s)        every event in the last W seconds satisfies phi
+  Eventually(phi, window_s)    at least one event in the last W seconds satisfies phi
+  Until(phi, psi, window_s)    phi holds until psi triggers, all within W seconds
+
+Plus four predicate constructors (`intent_named`, `decision_action`,
+`result_status`, `state_field_below`) for inline use without writing
+named lambdas. Combined with the existing And / Or / Not combinators,
+these express claims like "force never exceeds N for more than 100ms"
+or "after a HITL approval the next motion intent runs within 10s".
+
+### URDF workspace builder (ghostloop/policies/urdf.py)
+
+Bringing your own robot to ghostloop used to be a four-step manual
+chore: read the URDF, eyeball joint limits, sketch a reachable
+volume, hand-write a `WorkspaceModel`. This release collapses those
+into one call:
+
+    workspace, stats = workspace_from_urdf("franka_panda.urdf")
+
+The parser (pure stdlib `xml.etree.ElementTree`) walks every `<link>`
+and pulls `<box>` / `<sphere>` / `<cylinder>` collision geometries as
+`AxisAlignedBox` / `Sphere` obstacles, tracks every `<joint>` for
+diagnostics, and returns both the workspace and a `URDFParseStats`
+record carrying revolute / prismatic counts and any warnings (mesh
+geometries are skipped — load via trimesh externally if needed).
+
+### Domain-randomized Backend (ghostloop/backends/randomized.py)
+
+How sim-trained agents survive the real world: train under noise.
+`RandomizedBackend(base, config, seed)` wraps any Backend and applies
+five reproducible perturbations:
+
+  pos_noise_std            Gaussian noise on (x, y, z) snapshot fields
+  timing_jitter_s          uniform jitter on apply_action sleep
+  action_drop_prob         silent no-op probability per action
+  snapshot_dropout         random sensor field removal
+  sticky_action_prob       Atari-style sticky-action repeat
+
+Counters expose `actions_dropped` / `actions_sticky` so the sim2real
+trainer can monitor robustness vs original sim performance.
+
+### Trace query DSL (ghostloop/traces/query.py)
+
+Tiny one-line expression language over JSONL traces. Comparison
+operators on dotted paths plus `and`, `or`, `not`, `in`, parens,
+literals. Recursive-descent parser, no eval/exec, safe to expose over
+HTTP. Examples:
+
+    intent.name == "move_to"
+    decision.action == "deny" and intent.name == "move_to"
+    result.status == "error" and intent.args.x > 0.5
+    intent.name in ("move_to", "scan", "pick")
+
+Ships as `query(trace, expr) -> list[TraceEvent]` plus
+`compile_query(expr)` that returns a reusable predicate callable for
+streaming filters.
+
+### Safe-RL training harness (ghostloop/training/)
+
+Constrained-MDP training: maximise reward subject to the safety
+pipeline NOT denying actions. Five components:
+
+  Transition           one (obs, action, reward, next, done, violated) tuple
+  Rollout              one episode's transitions + return + violation rate
+  RolloutBatch         multi-episode batch with aggregate metrics
+  SafeRolloutCollector drives a Runtime through episodes, captures
+                       violations from the safety pipeline DENY decisions
+  LagrangianMultiplier adaptive multiplier: grows when violations >
+                       target, shrinks when below; clamped via min/max
+  PolicyAdapter        Protocol every policy must satisfy
+                       (act + update with batch + lagrangian)
+  train_safe(...)      outer loop calling collect -> lagrangian update
+                       -> policy.update with the current multiplier
+
+The harness is pure-stdlib + optional numpy. PyTorch / JAX / scripted
+policies all plug in via the Protocol.
+
+### Tests
+
+28 new tests across all five surfaces. Total package: 239 passed,
+7 live-gated (mujoco / pybullet / gymnasium when not installed).
+
 ## [0.7.0] — 2026-05-10 — Gymnasium + Cooldown + TimeWindow + SDF + Composite + Missions + Streaming
 
 Six additions that pull production infrastructure forward of the original
