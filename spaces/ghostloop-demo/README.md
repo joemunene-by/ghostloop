@@ -1,14 +1,14 @@
 ---
 title: ghostloop demo
 emoji: 🤖
-colorFrom: teal
+colorFrom: green
 colorTo: indigo
 sdk: gradio
 sdk_version: 4.44.0
 app_file: app.py
 pinned: true
 license: mit
-short_description: The agent loop, embodied. Drive any robot through a fail-closed safety pipeline.
+short_description: Drive any robot through a fail-closed safety pipeline.
 tags:
   - robotics
   - embodied-ai

@@ -46,7 +46,7 @@ by pushing a git tag.
   any change to the workflow file itself) triggers
   `publish-hf-space.yml`. The workflow creates the Space if it doesn't
   exist and uploads the directory. After this commit lands, the Space
-  is live at `huggingface.co/spaces/joemunene-by/ghostloop-demo`
+  is live at `huggingface.co/spaces/Ghostgim/ghostloop-demo`
   within ~3 minutes (HF build time on the free tier).
 
 ## Day 2 — the demo
@@ -117,7 +117,7 @@ by pushing a git tag.
 |---|---|---|
 | ML researchers | arXiv preprint | `arxiv.org/abs/2605.NNNNN` |
 | Python users | PyPI listing | `pypi.org/project/ghostloop` |
-| Curious clickers | HuggingFace Space | `huggingface.co/spaces/joemunene-by/ghostloop-demo` |
+| Curious clickers | HuggingFace Space | `huggingface.co/spaces/Ghostgim/ghostloop-demo` |
 | MCP power users | Smithery.ai listing | `smithery.ai/server/ghostloop` |
 | robotics generalists | Awesome-list entries | five PRs |
 | Twitter/X | demo video | platform-native |

@@ -1,6 +1,6 @@
 """HuggingFace Space — interactive ghostloop demo.
 
-Live URL: https://huggingface.co/spaces/joemunene-by/ghostloop-demo (after deploy).
+Live URL: https://huggingface.co/spaces/Ghostgim/ghostloop-demo (after deploy).
 
 Lets a visitor:
   1. Pick a robot profile (franka_arm / spot / tello / humanoid_demo).

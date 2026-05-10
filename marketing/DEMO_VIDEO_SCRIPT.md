@@ -71,7 +71,7 @@ reason: target x=5 outside workspace [-0.6, 0.6]
 
 URL on screen: `github.com/joemunene-by/ghostloop`
 
-Below it: `huggingface.co/spaces/joemunene-by/ghostloop-demo` (live demo, no install).
+Below it: `huggingface.co/spaces/Ghostgim/ghostloop-demo` (live demo, no install).
 
 **Voiceover:**
 > "ghostloop. The agent loop, embodied. Link in bio."

@@ -16,7 +16,7 @@ huggingface-cli repo create ghostloop-demo --type space \
     --space_sdk gradio
 
 # 2. Clone the empty Space repo.
-git clone https://huggingface.co/spaces/joemunene-by/ghostloop-demo \
+git clone https://huggingface.co/spaces/Ghostgim/ghostloop-demo \
     /tmp/hf-ghostloop-demo
 cd /tmp/hf-ghostloop-demo
 
@@ -32,7 +32,7 @@ git push
 The Space builds automatically (~3 minutes on free CPU tier). When
 finished, it's live at:
 
-  https://huggingface.co/spaces/joemunene-by/ghostloop-demo
+  https://huggingface.co/spaces/Ghostgim/ghostloop-demo
 
 ## Update flow (after PyPI release)
 
@@ -55,7 +55,7 @@ git push
   spike around launch, pin "always on" in the Space settings (free
   tier allows it for popular Spaces).
 - **Embedding:** the Space iframe-embeds cleanly into the portfolio
-  site (`https://huggingface.co/spaces/joemunene-by/ghostloop-demo?embed=true`)
+  site (`https://huggingface.co/spaces/Ghostgim/ghostloop-demo?embed=true`)
   or any blog post.
 
 ## Why this is the highest-conversion artifact

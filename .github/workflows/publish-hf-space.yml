@@ -2,7 +2,7 @@ name: Deploy HuggingFace Space
 
 # Triggers on a push to main that touches the Space directory or a
 # manual run from the Actions tab. The Space lives at
-# https://huggingface.co/spaces/joemunene-by/ghostloop-demo and re-builds
+# https://huggingface.co/spaces/Ghostgim/ghostloop-demo and re-builds
 # automatically once new files are pushed to its remote.
 #
 # REQUIRES (one-time, in this repo's Settings → Secrets and variables → Actions):
@@ -45,7 +45,7 @@ jobs:
       - name: Sync Space directory to HF
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          HF_USERNAME: ${{ vars.HF_USERNAME || 'joemunene-by' }}
+          HF_USERNAME: ${{ vars.HF_USERNAME || 'Ghostgim' }}
           HF_SPACE_NAME: ${{ vars.HF_SPACE_NAME || 'ghostloop-demo' }}
         run: |
           if [ -z "$HF_TOKEN" ]; then
