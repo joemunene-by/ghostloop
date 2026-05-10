@@ -712,8 +712,8 @@ MIT. See [LICENSE](LICENSE).
 
 ## The ghostloop family
 
-- **[ghostloop-ui](https://github.com/joemunene-by/ghostloop-ui)** — Next.js dashboard talking to `create_production_app`. Fleet view, alarm tray, episode list, Prometheus metrics. No Python on the operator's machine.
-- **[ghostloop-desktop](https://github.com/joemunene-by/ghostloop-desktop)** — Tauri 2 native app wrapping ghostloop-ui. Sidecar Python runtime + native gamepad input via `gilrs` + system tray + e-stop hotkey. Single-file desktop bundles for macOS / Windows / Linux.
-- **[Live demo on HuggingFace](https://huggingface.co/spaces/Ghostgim/ghostloop-demo)** — Gradio control panel, no install. Per-primitive dispatch buttons, virtual joystick, pause/resume/e-stop, live trace pane.
+- **[ghostloop-ui](https://github.com/joemunene-by/ghostloop-ui)**: Next.js 15 dashboard talking to `create_production_app`. Fleet view, alarm tray, episode list, Prometheus metrics, profile-aware gamepad mapper (drone / mobile base / quadruped / arm / humanoid), `/connect` onboarding for non-coders. Public deploy at [ghostloop-ui.vercel.app](https://ghostloop-ui.vercel.app), backend on Render. No Python on the operator's machine.
+- **[ghostloop-desktop](https://github.com/joemunene-by/ghostloop-desktop)** v0.2: Tauri 2 native app wrapping ghostloop-ui. Voice control via the embedded WebView's Web Speech API (Windows + Linux today, native whisper.cpp in v0.3 for macOS), gamepad rumble on safety events, native OS notifications for alarms, sidecar Python runtime, native gamepad via `gilrs` (wired and Bluetooth), system tray, e-stop hotkey. Single-file bundles for macOS / Windows / Linux on every tagged release via GitHub Actions.
+- **[Live demo on HuggingFace](https://huggingface.co/spaces/Ghostgim/ghostloop-demo)**: Gradio control panel, no install. Per-primitive dispatch buttons, virtual joystick, pause / resume / e-stop, live trace pane.
 
 Built by [Joe Munene](https://github.com/joemunene-by) at [Complex Developers](https://github.com/complexdevelopers). Sibling to [GhostLM](https://github.com/joemunene-by/GhostLM), [secure-mcp](https://github.com/joemunene-by/secure-mcp), [ghostguard](https://github.com/joemunene-by/ghostguard), [CyberBench](https://github.com/joemunene-by/cyberbench).
