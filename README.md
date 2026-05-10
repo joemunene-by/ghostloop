@@ -8,7 +8,7 @@ A tool-using agent runtime, fail-closed safety pipeline, statistically-rigorous 
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Status](https://img.shields.io/badge/status-v0.10.0%20%E2%80%94%20counterfactual%20%2B%20causal%20%2B%20LLM--judge%20%2B%20adversarial%20%2B%20mining%20%2B%20skills%20%2B%20HER%20%2B%20energy%20%2B%20morphology-14B8A6.svg)](#)
+[![Status](https://img.shields.io/badge/status-v0.10.0%20%E2%80%94%2010%20releases%20%2C%2070%2B%20modules-14B8A6.svg)](#)
 [![Tests](https://img.shields.io/badge/tests-296%20passed%2C%208%20live--gated-14B8A6.svg)](#)
 
 </div>
@@ -22,74 +22,114 @@ Robotics in 2026 has two healthy ecosystems and a missing middle.
 - **ROS 2** gives you middleware: a message bus, lifecycle management, drivers, navigation. It does not care about LLMs, agents, or modern eval methodology.
 - **VLA models** (Open-X-Embodiment, OpenVLA, π0, RT-2) give you policies: vision-and-language conditioned action heads. They mostly live in research codebases that ship the model weights but not the runtime.
 
-Nobody ships **the layer in between**: a runtime where a model emits high-level intents like `move_to(0.4, 0.2, 0.1)` or `pick("widget-7")`, those intents flow through a **fail-closed safety pipeline** (geofence, rate limit, deny list, eventually human-in-the-loop), the survivors execute on a backend (sim today, hardware later), and every step is captured in a structured **trace** that can be replayed, audited, or scored against a benchmark with statistical rigor.
+Nobody ships **the layer in between**: a runtime where a model emits high-level intents like `move_to(0.4, 0.2, 0.1)` or `pick("widget-7")`, those intents flow through a **fail-closed safety pipeline**, the survivors execute on a backend (sim or hardware), and every step is captured in a structured **trace** that can be replayed, audited, scored, mined, counterfactually re-played, or causally analysed.
 
-That layer is `ghostloop`. The shape is borrowed from `GhostAgent` in [GhostLM](https://github.com/joemunene-by/GhostLM): tool registry, policy gates, structured trace, paired-comparison eval. The novel piece is binding it to robot primitives instead of CVE lookups, and making the runtime backend-agnostic so the same agent loop drives a `MockBackend` today, MuJoCo right now, and ROS 2 / direct serial later.
+That layer is `ghostloop`. The shape is borrowed from `GhostAgent` in [GhostLM](https://github.com/joemunene-by/GhostLM): tool registry, policy gates, structured trace, paired-comparison eval. The novel piece is binding it to robot primitives instead of CVE lookups, making the runtime backend-agnostic so the same agent loop drives a mock today, MuJoCo / PyBullet / Gymnasium right now, and ROS 2 / direct hardware later — and adding a layer of post-hoc analysis tooling (counterfactual replay, causal attribution, LLM-as-judge, property mining, adversarial fuzzing) that no other robotics framework ships.
 
 ## Architecture
 
 ```
-                policy         registry           pipeline           backend
-                 emits          resolves          gates            executes
-   user goal  ┌──────────┐   ┌──────────┐    ┌──────────────┐   ┌──────────┐
-   ────────► │  Intent  │ ► │ Primitive│ ► │ PolicyPipeline │ ► │ Backend  │ ►
-              └──────────┘   └──────────┘    └──────────────┘   └──────────┘
-                                                                       │
-                                                                       ▼
-                                              ┌──────────────────────────────┐
-                                              │   Trace (JSONL, replayable)  │
-                                              └──────────────────────────────┘
-                                                              │
-                                                              ▼
-                                              ┌──────────────────────────────┐
-                                              │ Bench: Wilson CI + McNemar   │
-                                              └──────────────────────────────┘
+                policy        registry           pipeline           backend         post-hoc
+                 emits         resolves           gates           executes         analysis
+   user goal  ┌────────┐   ┌──────────┐   ┌──────────────┐   ┌──────────┐   ┌─────────────────┐
+   ────────► │ Intent │ ► │ Primitive │ ► │PolicyPipeline│ ► │ Backend  │ ► │ counterfactual  │
+              └────────┘   └──────────┘   └──────────────┘   └──────────┘   │ causal          │
+                                                                  │         │ LLM-judge       │
+                                                                  ▼         │ property mining │
+                                              ┌──────────────────────┐      │ adversarial     │
+                                              │  Trace (JSONL)       │ ───► │ trace query DSL │
+                                              └──────────────────────┘      │ energy ledger   │
+                                                       │                    └─────────────────┘
+                                                       ▼
+                                  ┌────────────────────────────────────┐
+                                  │ Bench: Wilson CI + McNemar +       │
+                                  │ Cohen's h + Sim2Real transfer gap  │
+                                  └────────────────────────────────────┘
 ```
 
 | Type | Role |
 |---|---|
-| `Intent` | A high-level structured command emitted by a policy: `name`, `args`, `rationale`. |
-| `Primitive` | A backend-bound callable. Has a name, a description, an arg schema (LLM-tool-card friendly). |
+| `Intent` | High-level structured command emitted by a policy: `name`, `args`, `rationale`. |
+| `Primitive` | Backend-bound callable. Has a name, description, arg schema (LLM-tool-card friendly). |
 | `PolicyPipeline` | Ordered list of `PolicyGate`s. Fail-closed: any deny short-circuits. |
-| `Backend` | Execution adapter. v0.1: `MockBackend`. **v0.2: `MuJoCoBackend`.** |
-| `Trace` | Append-only event log with `state_before` / `state_after` per step. JSONL writer included. |
-| **`LLMPolicy`** *(v0.2)* | Any OpenAI-compatible chat endpoint emits Intents through the registry's tool schema. |
-| **`bench`** *(v0.2)* | Episode harness with Wilson 95% CIs, McNemar exact p, Cohen's h, paired comparison. |
+| `Backend` | Execution adapter. `MockBackend` / `MuJoCoBackend` / `PyBulletBackend` / `GymnasiumBackend` / `ROS2Backend` / `RandomizedBackend`. |
+| `Trace` | Append-only event log with `state_before` / `state_after` / `decision` / `result` per step. JSONL writer + replay + query DSL. |
+| `LLMPolicy` / `VLAPolicy` | Bridge any OpenAI-compatible chat endpoint or VLA action head to the registry. |
+| `Mission` | DAG of Steps with prerequisites + retry semantics. Kahn-validated. |
+| `bench` | Episode harness with Wilson 95% CIs, McNemar exact p, Cohen's h, paired comparison, sim2real transfer gap. |
+| `properties` | Declarative invariants over traces — `Always` / `Eventually` / `Until` STL combinators + auto-mined candidates. |
+| `judges` | LLM-as-judge + heuristic rule-based trace scoring. |
+| `training` | Constrained-MDP rollout collector + Lagrangian multiplier + HER relabeling. |
 
-## What ships in v0.2.0
+## What ships in v0.10.0
 
-### Core (unchanged from v0.1)
-  - 13 abstractions: `Intent` / `Primitive` / `Registry` / `Result` / `Decision` / `PolicyGate` / `PolicyPipeline` / `Backend` / `MockBackend` / `TraceEvent` / `Trace` / `Runtime` (+ enums).
+70+ modules across ten releases. Highlights:
 
-### Policies — now four gates
-  - `DenyListGate`: hard-block named primitives (O(1) set lookup)
-  - `RateLimitGate`: per-primitive sliding-window rate limit
-  - `GeofenceGate`: axis-aligned bounding-box workspace limit
-  - **`LLMPolicy`** *(NEW)*: any OpenAI-compatible chat endpoint (Ollama, OpenAI, Anthropic-via-proxy, vLLM, GhostLM's multi-vendor server) emits Intents via the standard tools array. Includes a `done` pseudo-tool for graceful termination. Hallucinated tool calls surface as Intents the runtime resolver blocks (and traces). Best-effort arg coercion (string-floats become floats, string-bools become bools) for weaker models. Zero-SDK dependency: pure `urllib`.
+### Core runtime
+13 abstractions in `core.py` (Intent / Primitive / Result / Decision / PolicyGate / PolicyPipeline / Backend / MockBackend / TraceEvent / Trace / Runtime / Registry / DecisionAction). `async_runtime.py` mirrors them with awaitable gates + a `control_loop(rate_hz)`.
 
-### Backends — sim-first plus MuJoCo
+### Policy gates (12)
+`DenyListGate`, `RateLimitGate`, `GeofenceGate`, `ForceCapGate`, `HumanInTheLoopGate`, `ObstacleAvoidanceGate`, `RetryPolicy`, `CooldownGate`, `TimeWindowGate`, `ActionSmoothingGate` (velocity / acceleration limits), plus the `LLMPolicy` and `VLAPolicy` adapters. All fail-closed.
 
-  - `MockBackend`: zero-install in-memory backend.
-  - **`MuJoCoBackend`** *(NEW)*: real-physics backend via Google DeepMind's MuJoCo. Loads MJCF / URDF, exposes end-effector pose + joint state via `snapshot()`, drives `mj_step()` integration. Conditional import — package itself imports cleanly without `mujoco`; `MuJoCoBackend(...)` raises `ImportError` with install guidance only at construction time. Comes with MuJoCo-bound `move_to(x, y, z, duration)` and `scan(radius)` primitives.
+### Backends (6)
+- **`MockBackend`** — zero-install in-memory.
+- **`MuJoCoBackend`** — Google DeepMind MuJoCo with Menagerie auto-clone (Franka / UR5e / Spot / Stretch / Aloha / Allegro).
+- **`PyBulletBackend`** — Bullet physics for users without MuJoCo.
+- **`GymnasiumBackend`** — wrap any Farama Gymnasium env (hundreds of robotics + RL envs).
+- **`ROS2Backend`** — rclpy adapter for real-hardware deployments via DDS.
+- **`RandomizedBackend`** — wrap any backend with reproducible noise / jitter / dropout for sim2real.
 
-### Bench harness *(NEW)*
+### Workspace + geometry
+`WorkspaceModel` with axis-aligned boxes + spheres, `HalfSpace` / `ConvexPolytope` / `signed_distance` for SDF queries, `workspace_from_urdf(...)` to auto-build from a URDF, plus `project_to_workspace` / `project_to_sdf` for safe-action repair when a policy violates constraints.
 
-  - `Episode`: declarative trial — `setup()` returns a Backend, `policy(runtime)` yields Intents (or runs its own loop), `success_predicate(trace, state)` scores it.
-  - `EpisodeRunner`: drives every episode end-to-end, returns `EpisodeResult`s.
-  - `RunReport`: pass count, rate, Wilson 95% CI, Markdown rendering.
-  - `paired_compare(a, b)`: pairs two reports episode-by-episode and computes:
-    - **Wilson 95% CIs** for each rate (well-behaved at p≈0 / p≈1).
-    - **McNemar exact p** via the binomial distribution (numerically stable in log space).
-    - **Cohen's h** effect size with negligible / small / medium / large labels.
+### Bench harness
+- `Episode` / `EpisodeRunner` / `RunReport` with Wilson 95% CIs.
+- `paired_compare` — McNemar exact p + Cohen's h.
+- `Sim2RealBench` — paired transfer-gap harness with per-primitive action-distribution KL.
+- `random_seeds` / `grid_seeds` / `cma_es_seeds` — adversarial fuzzers for finding failure-prone Episode initial states.
+- `RewardShaper` — declarative reward DSL (`OnPrimitive` / `OnDecision` / `OnObservation` / `StepCost` / `CustomReward`).
+- Episode catalogue: `preset_reach_8` / `preset_pick_and_place_4` / `preset_geofence_smoke`.
 
-### Demos
+### Properties + verification
+- `PropertyEngine` with built-in invariants (`StaysInsideWorkspace`, `NeverHoldsTwoObjects`, `NeverExceedsRate`, `NoConsecutiveDuplicateIntents`).
+- `Always` / `Eventually` / `Until` STL combinators over sliding windows.
+- `AndProperty` / `OrProperty` / `NotProperty` boolean combinators.
+- `mine_properties(traces)` — auto-discover candidate invariants from a corpus (followup transitions, numeric bounds, workspace AABBs).
 
-  - `examples/pick_and_place.py`: 6-step scripted episode against `MockBackend`, includes deliberate fence violation that the safety pipeline catches.
-  - **`examples/bench_with_without_geofence.py`** *(NEW)*: 8-episode bench paired-compared with and without `GeofenceGate`. Fully reproducible output with Wilson CIs, McNemar p, Cohen's h.
+### Post-hoc analysis (the v0.10 novel pillars)
+- `replay_with_policy(trace, new_policy)` — counterfactual reasoning. "What would policy B have done on policy A's trace?"
+- `attribute_failure(trace, property)` — leave-one-out causal attribution; ranks events by necessity.
+- `minimal_cause_set` — greedy multi-event attribution.
+- `LLMJudge` — score traces with an LLM against a configurable rubric.
+- `HeuristicJudge` — rule-based predicate scoring for air-gapped CI.
 
-### Tests
+### Missions + skills
+- `Mission` / `Step` / `MissionRunner` — DAG of steps with prerequisites, retry semantics, required-vs-optional.
+- `SkillGraph` — typed DAG of skills with prereq + refines edges.
+- `MorphologyRegistry` — register `pick` per `(franka, ur5e, spot)` and build per robot.
+- `composite_primitive` — sequence existing primitives behind one name.
 
-  - **64 passed, 5 skipped** *(the 5 are the live MuJoCo integration tests, gated on the `mujoco` package being importable so the offline test path stays at zero install cost)*. All in **0.38s**.
+### Training (constrained-MDP + HER)
+- `SafeRolloutCollector` + `LagrangianMultiplier` + `train_safe` — train policies under the safety pipeline; safety violations contribute to a Lagrangian penalty.
+- `hindsight_relabel(rollout, goal_extractor, reward_fn)` — classic HER (Andrychowicz et al. 2017) with FINAL / FUTURE / EPISODE / RANDOM strategies.
+- `sparse_indicator_reward(threshold)` — canonical HER reward.
+
+### Telemetry + persistence
+- OpenTelemetry hooks (`step_span`, `record_decision`, `record_result`).
+- `EnergyLedger` — per-primitive joule accounting with constant / linear-in-arg / linear-in-duration / linear-in-xyz models.
+- `GhostloopStore` — SQLite store for episodes / runs / comparisons.
+- `Trace.write_jsonl()` + `load_trace()` + `iter_events()` + `summarize_trace()`.
+- `query(trace, expr)` — small DSL over traces (comparison ops + `and`/`or`/`not`/`in`).
+- `diff_traces(a, b)` — structured diff for ablation studies.
+
+### Fleet + dashboard
+- `RobotHandle` / `FleetRegistry` / `FleetDispatcher` (FIRST_IDLE / ROUND_ROBIN / LEAST_BUSY).
+- `create_dashboard_app(store, fleet)` — read-only FastAPI surface over the SQLite store.
+- `StreamManager` + `attach_streaming(app)` — WebSocket trace streaming with bounded ring buffers.
+
+### MCP + LLM integration
+- `mcp_server.py` exposes the runtime as a FastMCP server so Claude Desktop / Cursor / any MCP client can drive a robot through the safety pipeline.
+- `LLMPolicy` (closed-loop) and `LLMPlanner` (single-shot full-plan emission).
 
 ## Quick start
 
@@ -102,21 +142,9 @@ PYTHONPATH=. python3 examples/pick_and_place.py
 
 # Demo 2: paired-comparison bench harness.
 PYTHONPATH=. python3 examples/bench_with_without_geofence.py
-```
 
-The bench-comparison output:
-
-```
-# Paired comparison: with-geofence vs no-gates
-Bench: geofence-impact · n=8
-
-| Run           | Passed | Rate   | Wilson 95% CI    |
-| no-gates      | 8      | 100.0% | [67.6%, 100.0%]  |
-| with-geofence | 4      | 50.0%  | [21.5%, 78.5%]   |
-
-Discordant pairs: only-A=4, only-B=0
-McNemar exact p: 0.1250 (not significant — n=4 discordant)
-Cohen's h: −1.571 (large)
+# Tests (296 pass with no extras installed; live-gated tests skip cleanly).
+PYTHONPATH=. python3 -m pytest tests/
 ```
 
 ## Use it programmatically
@@ -141,30 +169,16 @@ summary = llm_policy_loop(
     registry=registry,
     runtime=runtime,
     goal="Pick widget-7 from (0.4, 0.2, 0.1) and place it at (-0.4, 0.2, 0.1).",
-    config=LLMPolicyConfig(
-        base_url="http://localhost:11434/v1",  # Ollama default
-        model="qwen2.5:14b",
-    ),
+    config=LLMPolicyConfig(base_url="http://localhost:11434/v1", model="qwen2.5:14b"),
     max_steps=16,
 )
-print(summary["terminated"], summary["steps"])
 runtime.trace.write_jsonl("episode.jsonl")
-```
-
-### Run a paired-comparison bench
-
-```python
-from ghostloop.bench import EpisodeRunner, paired_compare, summarize
-
-a = summarize(EpisodeRunner().run_all(eps_a), run_name="no-gates", bench_name="my-bench")
-b = summarize(EpisodeRunner().run_all(eps_b), run_name="with-fence", bench_name="my-bench")
-print(paired_compare(a, b).render_md())
 ```
 
 ### Drive a real physics simulation
 
 ```python
-from ghostloop import PolicyPipeline, PrimitiveRegistry, Runtime
+from ghostloop import PolicyPipeline, PrimitiveRegistry, Runtime, Intent
 from ghostloop.backends import MuJoCoBackend
 from ghostloop.backends.mujoco import move_to, scan
 
@@ -176,14 +190,130 @@ runtime.step(Intent("move_to", {"x": 0.4, "y": 0.0, "z": 0.5, "duration": 1.0}))
 runtime.step(Intent("scan", {"radius": 0.5}))
 ```
 
-Models from the [MuJoCo Menagerie](https://github.com/google-deepmind/mujoco_menagerie) drop in directly: Franka Panda, UR5e, Stretch RE3, Allegro hand, Spot, Aloha bimanual, etc.
+Models from the [MuJoCo Menagerie](https://github.com/google-deepmind/mujoco_menagerie) drop in directly: Franka Panda, UR5e, Stretch RE3, Allegro hand, Spot, Aloha bimanual.
+
+### Counterfactual replay — "what would the new policy have done?"
+
+```python
+from ghostloop.counterfactual import replay_with_policy
+from ghostloop.traces import load_trace
+
+original = load_trace("episode.jsonl")
+
+def new_policy(state_before):
+    # any callable mapping state -> Intent | None
+    return Intent("scan", {"radius": 0.3})
+
+cf = replay_with_policy(original, new_policy, new_policy_name="more-cautious")
+print(cf.divergence_rate, cf.first_divergence_step)
+print(cf.render_md())
+```
+
+### Causal failure attribution
+
+```python
+from ghostloop.causal import attribute_failure, minimal_cause_set
+from ghostloop.properties import StaysInsideWorkspace
+
+prop = StaysInsideWorkspace(min_corner=(-1, -1, 0), max_corner=(1, 1, 1))
+analysis = attribute_failure(failing_trace, prop)
+print(analysis.render_md())          # ranked top-K root causes
+
+cause_set = minimal_cause_set(failing_trace, prop, max_set_size=3)
+```
+
+### LLM-as-judge
+
+```python
+from ghostloop.judges import LLMJudge, LLMJudgeConfig
+
+class GhostLMClient:
+    def chat(self, messages, **kwargs):
+        # adapt your chat endpoint here
+        ...
+
+judge = LLMJudge(client=GhostLMClient(), config=LLMJudgeConfig(model="ghostlm-v0.9-chat"))
+judgement = judge.score(trace)
+print(judgement.label, judgement.score, judgement.rubric_scores)
+```
+
+### Adversarial fuzzing
+
+```python
+from ghostloop.bench import cma_es_seeds
+
+def perturb(base_episode, sample):
+    # return a copy of base_episode with backend initial state shifted by `sample`
+    ...
+
+results = cma_es_seeds(
+    base_episode, perturb,
+    parameter_ranges={"x0": (-1.0, 1.0), "y0": (-1.0, 1.0)},
+    n_iterations=8, population_size=8, seed=42,
+)
+worst = results[:5]    # promote into your regression bench
+```
+
+### Property mining
+
+```python
+from ghostloop.properties import mine_properties
+
+corpus = [load_trace(p) for p in successful_traces_paths]
+candidates = mine_properties(corpus, min_support=0.9)
+for mp in candidates:
+    print(mp.pattern, mp.description, mp.support)
+    promoted = mp.promote()        # a real Property ready for the engine
+```
+
+### Sim-to-Real bench
+
+```python
+from ghostloop.bench import Sim2RealBench
+
+bench = Sim2RealBench(
+    sim_episodes=eps_sim,
+    real_episodes=eps_real,
+    sim_label="mujoco", real_label="randomized_mujoco",
+)
+report = bench.run()
+print(report.render_md())          # transfer gap + McNemar + KL action-distribution
+```
+
+### Energy ledger
+
+```python
+from ghostloop.telemetry import EnergyLedger
+
+ledger = EnergyLedger()
+print(ledger.total(trace), "J")
+print(ledger.by_primitive(trace))
+```
+
+### Skill graph + cross-embodiment
+
+```python
+from ghostloop.skills import SkillGraph, skill_from_primitive
+from ghostloop.primitives import MorphologyRegistry, move_to, scan
+
+graph = SkillGraph()
+graph.add(skill_from_primitive(move_to()))
+graph.add(skill_from_primitive(scan(), prerequisites=["move_to"]))
+graph.validate()
+order = graph.topological_order()        # ['move_to', 'scan']
+
+reg = MorphologyRegistry()
+reg.register("franka", "pick", franka_pick_factory)
+reg.register("ur5e",   "pick", ur5e_pick_factory)
+prims = reg.build("franka", ["pick"])    # robot-specific primitives
+```
 
 ## Roadmap
 
 | Version | Focus |
 |---|---|
 | v0.1.0 | Core abstractions, MockBackend, three policy gates, runnable demo, 23 tests |
-| v0.2.0 | MuJoCoBackend, LLMPolicy adapter, bench harness with Wilson CIs + McNemar + Cohen's h, paired-comparison demo, 64 tests |
+| v0.2.0 | MuJoCoBackend, LLMPolicy adapter, bench harness with Wilson CIs + McNemar + Cohen's h, 64 tests |
 | v0.3.0 | PyBulletBackend, async runtime, declarative properties engine, MCP server, scripted policies, 89 tests |
 | v0.4.0 | ForceCap + HumanInTheLoop gates, episode catalogue, MuJoCo Menagerie auto-clone, replay/diff CLI, 110 tests |
 | v0.5.0 | VLAPolicy adapter, sensor primitives + cameras, OpenTelemetry hooks, SQLite persistence, planner DSL, 142 tests |
@@ -191,45 +321,135 @@ Models from the [MuJoCo Menagerie](https://github.com/google-deepmind/mujoco_men
 | v0.7.0 | GymnasiumBackend, CooldownGate + TimeWindowGate, convex polytope SDF, composite primitives, Mission DAG runner, WebSocket trace streaming, 211 tests |
 | v0.8.0 | STL temporal properties, URDF workspace builder, RandomizedBackend, trace query DSL, safe-RL harness with Lagrangian, 239 tests |
 | v0.9.0 | ROS2Backend, ActionSmoothingGate, safe-action projection, reward shaper DSL, Sim2RealBench, 263 tests |
-| **v0.10.0 (now)** | **Counterfactual trace replay**, **causal failure attribution**, **LLM-as-judge for traces**, **adversarial bench generator (random / grid / CMA-ES)**, **property mining (auto-discovered invariants)**, **skill graph (DAG of skills with prereqs)**, **hindsight relabeling (HER)**, **energy ledger (joules per primitive)**, **cross-embodiment morphology registry**, 296 tests |
+| **v0.10.0 (now)** | **Counterfactual trace replay**, **causal failure attribution**, **LLM-as-judge for traces**, **adversarial bench generator**, **property mining**, **skill graph**, **hindsight relabeling**, **energy ledger**, **cross-embodiment morphology registry**, 296 tests |
 | v1.0 | Multi-modal perception (RGB-D fusion + lightweight object detection), end-to-end VLA-on-MuJoCo benchmarks reproducing OpenVLA / π0 numbers under our trace + safety regime, fleet dashboard productionised. |
 
 ## Repository layout
 
 ```
 ghostloop/
-  __init__.py        — public API surface
-  core.py            — Intent / Primitive / Runtime / Trace / Decision
+  __init__.py                public API surface, version
+  core.py                    Intent / Primitive / Runtime / Trace / Decision / Backend / MockBackend
+  async_runtime.py           AsyncRuntime + control_loop(rate_hz)
+  observations.py            ObservationBuffer (deque-based short-term memory)
+  store.py                   GhostloopStore — SQLite episodes / runs / comparisons
+  mcp_server.py              FastMCP server exposing Runtime as MCP tools
+  counterfactual.py          replay_with_policy + CounterfactualTrace        (v0.10)
+  causal.py                  attribute_failure + minimal_cause_set            (v0.10)
+
   policies/
-    deny_list.py     — DenyListGate
-    geofence.py      — GeofenceGate
-    rate_limit.py    — RateLimitGate
-    llm.py           — LLMPolicy + LLMPolicyConfig + llm_policy_loop  (v0.2)
+    deny_list.py             DenyListGate
+    rate_limit.py            RateLimitGate
+    geofence.py              GeofenceGate
+    force_cap.py             ForceCapGate
+    human_in_the_loop.py     HumanInTheLoopGate + cli_approver
+    workspace.py             WorkspaceModel + ObstacleAvoidanceGate
+    sdf.py                   HalfSpace / ConvexPolytope / signed_distance     (v0.7)
+    urdf.py                  workspace_from_urdf                              (v0.8)
+    cooldown.py              CooldownGate                                     (v0.7)
+    time_window.py           TimeWindowGate + Window                          (v0.7)
+    smoothing.py             ActionSmoothingGate + smooth_target              (v0.9)
+    safe_projection.py       project_to_workspace + project_to_sdf            (v0.9)
+    retry.py                 RetryPolicy + transient-error helpers
+    llm.py                   LLMPolicy + LLMPolicyConfig + llm_policy_loop
+    vla.py                   VLAPolicy + DeltaXYZDecoder
+
   primitives/
-    motion.py        — move_to, scan (MockBackend)
-    manipulation.py  — pick, place (MockBackend)
+    motion.py                move_to / scan
+    manipulation.py          pick / place
+    trajectory.py            follow_trajectory + linear_interpolate
+    composite.py             composite_primitive factory                     (v0.7)
+    morphology.py            MorphologyRegistry — cross-embodiment           (v0.10)
+
   backends/
-    mujoco.py        — MuJoCoBackend + move_to + scan (v0.2)
-  bench/             — Episode / RunReport / paired_compare           (v0.2)
-    episode.py       — Episode + EpisodeRunner + EpisodeResult
-    report.py        — RunReport + wilson_ci + summarize
-    compare.py       — PairedComparison + mcnemar_p + cohens_h
+    mujoco.py                MuJoCoBackend                                   (v0.2)
+    pybullet.py              PyBulletBackend                                 (v0.3)
+    gymnasium.py             GymnasiumBackend (Farama Gym ecosystem)         (v0.7)
+    ros2.py                  ROS2Backend (rclpy adapter)                     (v0.9)
+    randomized.py            RandomizedBackend (sim2real wrapper)            (v0.8)
+    menagerie.py             MuJoCo Menagerie auto-clone                     (v0.4)
+
+  bench/
+    episode.py               Episode + EpisodeRunner + EpisodeResult         (v0.2)
+    report.py                RunReport + wilson_ci + summarize               (v0.2)
+    compare.py               paired_compare + mcnemar_p + cohens_h            (v0.2)
+    catalogue.py             preset_reach_8 + preset_pick_and_place_4 + …    (v0.4)
+    reward_shaper.py         RewardShaper + OnPrimitive / OnDecision / …     (v0.9)
+    sim2real.py              Sim2RealBench + Sim2RealReport                   (v0.9)
+    adversarial.py           random_seeds / grid_seeds / cma_es_seeds        (v0.10)
+
+  properties/
+    core.py                  Property + PropertyEngine + Severity            (v0.5)
+    builtins.py              StaysInsideWorkspace / NeverHoldsTwoObjects/…   (v0.5)
+    combinators.py           AndProperty / OrProperty / NotProperty          (v0.6)
+    temporal.py              Always / Eventually / Until (STL)               (v0.8)
+    mining.py                mine_properties + MinedProperty                 (v0.10)
+
+  judges/
+    llm_judge.py             LLMJudge + LLMJudgeConfig + parse_judgement     (v0.10)
+    heuristic.py             HeuristicJudge + rule predicates                 (v0.10)
+
+  skills/
+    graph.py                 SkillGraph + Skill + topological order           (v0.10)
+
+  missions/
+    core.py                  Mission + Step + MissionRunner + MissionResult   (v0.7)
+
+  fleet/
+    core.py                  RobotHandle + FleetRegistry + FleetDispatcher    (v0.6)
+
+  dashboard/
+    api.py                   FastAPI factory + healthz + store endpoints      (v0.6)
+    streaming.py             StreamManager + WebSocket /ws/v1/stream          (v0.7)
+
+  planning/
+    core.py                  TaskPlanner + TaskStep                          (v0.5)
+    builtin.py               sequential_planner / fixed_plan                  (v0.5)
+    llm_planner.py           LLMPlanner (single-shot full-plan emission)      (v0.6)
+
+  sensors/
+    camera.py                Camera Protocol + MockCamera + capture_camera   (v0.5)
+
+  telemetry/
+    otel.py                  step_span + record_decision + record_result    (v0.5)
+    energy.py                EnergyLedger + PrimitiveEnergyModel             (v0.10)
+
+  training/
+    core.py                  SafeRolloutCollector + LagrangianMultiplier     (v0.8)
+    hindsight.py             HER relabeling + sparse_indicator_reward        (v0.10)
+
+  traces/
+    replay.py                load_trace + iter_events + summarize_trace      (v0.4)
+    diff.py                  diff_traces + StepDiff + TraceDiff              (v0.6)
+    query.py                 query DSL with comparison ops + and/or/not/in   (v0.8)
+
 examples/
-  pick_and_place.py              — scripted end-to-end demo
-  bench_with_without_geofence.py — paired-comparison demo (v0.2)
-tests/
-  test_core.py                   — 23 tests
-  test_llm_policy.py             — 14 tests (v0.2, urllib mocked)
-  test_bench.py                  — 22 tests (v0.2)
-  test_mujoco_backend.py         — 5 offline + 5 live-gated  (v0.2)
-assets/
-  ghostloop_mark*.png            — favicon-sized + social card variants
-  ghostloop_wordmark*.png        — full lockup
+  pick_and_place.py                    scripted end-to-end demo
+  bench_with_without_geofence.py       paired-comparison demo
+
+tests/                                  296 tests (8 live-gated)
+  test_core.py                          23
+  test_llm_policy.py                    14
+  test_bench.py                         22
+  test_mujoco_backend.py                10
+  test_v03_additions.py                 25
+  test_v04_additions.py                 21
+  test_v05_additions.py                 32
+  test_v06_additions.py                 37
+  test_v07_additions.py                 29
+  test_v08_additions.py                 28
+  test_v09_additions.py                 25
+  test_v10_additions.py                 33
+
+assets/                                  brand mark + wordmark variants
+docs/                                    architecture / migration / brand notes
 ```
 
 ## Why this is novel
 
-There are robot frameworks. There are agent frameworks. There is no robot framework that **treats robots as a model with a tool registry, a fail-closed safety gate, a structured trace log, and statistical bench rigor** — the same shape that is now standard for LLM-driven cybersec agents (`secure-mcp`, `ghostguard`, `GhostAgent`). The thesis: as VLA models become the policy substrate, the runtime around them needs the same rigor we already apply to LLM tool use. ghostloop is that runtime.
+There are robot frameworks. There are agent frameworks. There is no robot framework that **treats robots as a model with a tool registry, a fail-closed safety pipeline, a structured trace log, statistical bench rigor, AND a layer of post-hoc analysis** (counterfactual replay, causal attribution, LLM-as-judge, property mining, adversarial fuzzing) — the same shape that's now standard for LLM-driven cybersec agents (`secure-mcp`, `ghostguard`, `GhostAgent`).
+
+The thesis: as VLA models become the policy substrate, the runtime around them needs the same rigor we already apply to LLM tool use, plus the analytical tooling — counterfactuals, causal attribution, judge models — that LLM safety has been building for years. ghostloop is that runtime.
 
 ## License
 
