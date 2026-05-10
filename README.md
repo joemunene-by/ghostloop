@@ -8,8 +8,8 @@ A tool-using agent runtime, fail-closed safety pipeline, statistically-rigorous 
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Status](https://img.shields.io/badge/status-v0.10.0%20%E2%80%94%2010%20releases%20%2C%2070%2B%20modules-14B8A6.svg)](#)
-[![Tests](https://img.shields.io/badge/tests-296%20passed%2C%208%20live--gated-14B8A6.svg)](#)
+[![Status](https://img.shields.io/badge/status-v1.0.0%20%E2%80%94%20production-14B8A6.svg)](#)
+[![Tests](https://img.shields.io/badge/tests-314%20passed%2C%208%20live--gated-14B8A6.svg)](#)
 
 </div>
 
@@ -321,8 +321,8 @@ prims = reg.build("franka", ["pick"])    # robot-specific primitives
 | v0.7.0 | GymnasiumBackend, CooldownGate + TimeWindowGate, convex polytope SDF, composite primitives, Mission DAG runner, WebSocket trace streaming, 211 tests |
 | v0.8.0 | STL temporal properties, URDF workspace builder, RandomizedBackend, trace query DSL, safe-RL harness with Lagrangian, 239 tests |
 | v0.9.0 | ROS2Backend, ActionSmoothingGate, safe-action projection, reward shaper DSL, Sim2RealBench, 263 tests |
-| **v0.10.0 (now)** | **Counterfactual trace replay**, **causal failure attribution**, **LLM-as-judge for traces**, **adversarial bench generator**, **property mining**, **skill graph**, **hindsight relabeling**, **energy ledger**, **cross-embodiment morphology registry**, 296 tests |
-| v1.0 | Multi-modal perception (RGB-D fusion + lightweight object detection), end-to-end VLA-on-MuJoCo benchmarks reproducing OpenVLA / π0 numbers under our trace + safety regime, fleet dashboard productionised. |
+| v0.10.0 | Counterfactual trace replay, causal failure attribution, LLM-as-judge for traces, adversarial bench generator, property mining, skill graph, hindsight relabeling, energy ledger, cross-embodiment morphology registry, 296 tests |
+| **v1.0.0 (now)** | **RGB-D fusion + deproject_depth + BlobDetector + CameraProcessorPipeline**, **VLABenchmarkSuite + published-baseline catalogue (OpenVLA / π0 / RT-2 / Octo / Diffusion Policy / ACT)**, **production fleet dashboard (StaticTokenAuth / RateLimiter / AlarmRegistry / Prometheus /metrics / livez+readyz)**, 314 tests |
 
 ## Repository layout
 

@@ -24,6 +24,15 @@ Lambda / etc.
 """
 
 from .api import create_dashboard_app, dashboard_available
+from .production import (
+    AlarmRecord,
+    AlarmRegistry,
+    AuthStrategy,
+    ProductionConfig,
+    RateLimiter,
+    StaticTokenAuth,
+    create_production_app,
+)
 from .streaming import StreamManager, attach_streaming
 
 __all__ = [
@@ -31,4 +40,11 @@ __all__ = [
     "dashboard_available",
     "StreamManager",
     "attach_streaming",
+    "AlarmRecord",
+    "AlarmRegistry",
+    "AuthStrategy",
+    "ProductionConfig",
+    "RateLimiter",
+    "StaticTokenAuth",
+    "create_production_app",
 ]

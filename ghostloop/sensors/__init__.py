@@ -15,6 +15,15 @@ from .camera import (
     MockCamera,
     capture_camera,
 )
+from .perception import (
+    BlobDetector,
+    CameraProcessorPipeline,
+    ColorTarget,
+    Detection,
+    Detector,
+    FusedFrame,
+    deproject_depth,
+)
 
 __all__ = [
     "Camera",
@@ -23,4 +32,11 @@ __all__ = [
     "CameraProcessor",
     "MockCamera",
     "capture_camera",
+    "BlobDetector",
+    "CameraProcessorPipeline",
+    "ColorTarget",
+    "Detection",
+    "Detector",
+    "FusedFrame",
+    "deproject_depth",
 ]

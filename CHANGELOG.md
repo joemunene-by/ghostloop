@@ -1,5 +1,80 @@
 # Changelog
 
+## [1.0.0] — 2026-05-10 — Production: RGB-D Perception + VLA-on-MuJoCo Benchmark + Production Fleet Dashboard
+
+The 1.0 release. Three pillars that close the original roadmap:
+
+### RGB-D fusion + lightweight object detection (ghostloop/sensors/perception.py)
+
+The v0.5 sensors module shipped a `Camera` Protocol with intrinsics +
+opaque RGB / depth payloads. v1.0 adds the processing layer:
+
+  - `deproject_depth(frame)` — depth + intrinsics -> 3D point cloud.
+    Numpy fast path; pure-stdlib fallback. Returns a `FusedFrame`
+    with points + colors + valid_mask.
+  - `BlobDetector` — colour-threshold blob finder producing typed
+    `Detection` records (bbox + 2D centroid + 3D centroid via
+    ray-deprojection). Stdlib fallback that works without OpenCV;
+    swap in a real detector via the `Detector` Protocol when you
+    install `ghostloop[perception]`.
+  - `CameraProcessorPipeline` — chain detectors, swallow per-detector
+    errors so one buggy detector doesn't kill the pipeline.
+  - `ColorTarget` — declarative threshold spec for the blob
+    detector.
+
+### VLA-on-MuJoCo benchmark harness (ghostloop/bench/vla_benchmark.py)
+
+The other shipped benches (Sim2Real, paired comparison) are great
+for internal A/B testing but don't help you publish numbers against
+the literature. `VLABenchmarkSuite` does:
+
+  - Run a policy through an Episode catalogue, summarize with
+    Wilson CI / pass rate.
+  - Compare against `BaselineSpec` records carrying published
+    numbers (OpenVLA-7B / RT-2-X / Octo-Base / π0 / Diffusion
+    Policy / ACT) plus citations.
+  - Render a Markdown report with Cohen's h vs every baseline
+    (unpaired comparison; the right metric since the original
+    papers ran different episode pools).
+
+`catalogue_published()` ships a hand-curated set of published
+baselines for three benches: `pick_place_widowx`,
+`manipulation_bridge`, `reach_target`. Each entry includes the
+arXiv citation so the generated report links back to the source.
+
+### Production fleet dashboard (ghostloop/dashboard/production.py)
+
+The v0.6 `create_dashboard_app` was read-only and unauthenticated —
+fine for lab demos. v1.0 adds the production layer:
+
+  - `StaticTokenAuth` — bearer-token guard with env-var loading.
+    `AuthStrategy` Protocol so OAuth / mTLS / JWT verifiers can swap
+    in.
+  - `RateLimiter` — per-token sliding-window rate limit, configurable.
+  - `AlarmRegistry` — typed in-memory alarm bus with raise / ack /
+    history. `/v1/alarms` lets operators query and acknowledge live
+    alarms; the property engine + safety pipeline can raise alarms
+    programmatically.
+  - `/livez` + `/readyz` — kube-friendly liveness / readiness probes
+    separate from `/healthz`.
+  - `/metrics` — Prometheus-format counters (requests / auth
+    failures / rate-limited responses / active alarms / fleet status
+    breakdown by `IDLE / BUSY / OFFLINE / ERROR`).
+  - `ProductionConfig` — one knob bag for CORS origins, auth
+    strategy, rate-limit window + threshold, metrics on/off,
+    operator label.
+  - CORS allowlist (no more `*` by default).
+
+### Other
+
+  - `Development Status :: 5 - Production/Stable` in pyproject.
+
+### Tests
+
+18 new tests across all three pillars. Total: **314 passed, 8
+live-gated** (mujoco / pybullet / gymnasium / ROS2 when not
+installed).
+
 ## [0.10.0] — 2026-05-10 — Counterfactual + Causal + LLM-Judge + Adversarial + Mining + Skills + HER + Energy + Morphology
 
 The novel-capabilities release. Nine pillars across the post-hoc

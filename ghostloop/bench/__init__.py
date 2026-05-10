@@ -42,6 +42,13 @@ from .reward_shaper import (
     from_dict as reward_shaper_from_dict,
 )
 from .sim2real import Sim2RealBench, Sim2RealReport
+from .vla_benchmark import (
+    BaselineSpec,
+    VLABenchmarkResult,
+    VLABenchmarkSuite,
+    catalogue_published,
+    suite_with_published_baselines,
+)
 
 __all__ = [
     "Episode",
@@ -80,4 +87,10 @@ __all__ = [
     "cma_es_seeds",
     "grid_seeds",
     "random_seeds",
+    # vla benchmark
+    "BaselineSpec",
+    "VLABenchmarkResult",
+    "VLABenchmarkSuite",
+    "catalogue_published",
+    "suite_with_published_baselines",
 ]
