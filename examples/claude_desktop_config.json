@@ -1,0 +1,36 @@
+{
+  "mcpServers": {
+    "ghostloop": {
+      "command": "python3",
+      "args": [
+        "/absolute/path/to/ghostloop/examples/claude_desktop_mcp_arm.py"
+      ],
+      "env": {
+        "GHOSTLOOP_BACKEND": "mock"
+      }
+    },
+    "ghostloop-mujoco": {
+      "command": "python3",
+      "args": [
+        "/absolute/path/to/ghostloop/examples/claude_desktop_mcp_arm.py"
+      ],
+      "env": {
+        "GHOSTLOOP_BACKEND": "mujoco",
+        "GHOSTLOOP_MUJOCO_MODEL": "/absolute/path/to/franka_panda.xml"
+      }
+    },
+    "ghostloop-real-arm": {
+      "command": "python3",
+      "args": [
+        "/absolute/path/to/ghostloop/examples/claude_desktop_mcp_arm.py"
+      ],
+      "env": {
+        "GHOSTLOOP_BACKEND": "ros2",
+        "GHOSTLOOP_ROS2_NODE": "ghostloop_arm",
+        "GHOSTLOOP_CMD_VEL": "/cmd_vel",
+        "GHOSTLOOP_JOINT_STATES": "/joint_states",
+        "GHOSTLOOP_FORCE_TORQUE": "/wrench"
+      }
+    }
+  }
+}

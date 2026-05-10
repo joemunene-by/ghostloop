@@ -131,23 +131,108 @@ That layer is `ghostloop`. The shape is borrowed from `GhostAgent` in [GhostLM](
 - `mcp_server.py` exposes the runtime as a FastMCP server so Claude Desktop / Cursor / any MCP client can drive a robot through the safety pipeline.
 - `LLMPolicy` (closed-loop) and `LLMPlanner` (single-shot full-plan emission).
 
-## Quick start
+## Setup
+
+There are three ways to run ghostloop, in order of effort. **Start with the zero-install path, prove the safety pipeline, then promote to your real arm.**
+
+### 1. Zero-install (3 minutes)
 
 ```bash
 git clone https://github.com/joemunene-by/ghostloop
 cd ghostloop
 
-# Demo 1: end-to-end agent loop with safety pipeline (zero install).
+# Run the canonical pick-and-place demo on MockBackend.
 PYTHONPATH=. python3 examples/pick_and_place.py
 
-# Demo 2: paired-comparison bench harness.
+# Run a paired-comparison bench (Wilson CI + McNemar + Cohen's h).
 PYTHONPATH=. python3 examples/bench_with_without_geofence.py
 
-# Tests (296 pass with no extras installed; live-gated tests skip cleanly).
+# Full test suite — 314 pass, 8 live-gated (skip cleanly without extras).
 PYTHONPATH=. python3 -m pytest tests/
 ```
 
-## Use it programmatically
+No dependencies beyond Python 3.10+. This proves the runtime, the safety pipeline, the bench harness, and the trace recorder — exactly the same code you'll point at a real arm later.
+
+### 2. Drive a sim arm with Claude Desktop (10 minutes)
+
+Claude Desktop / Cursor / any MCP client can drive ghostloop through `examples/claude_desktop_mcp_arm.py`. The script constructs a Runtime + safety pipeline + Backend and exposes every Primitive as an MCP tool the assistant can call.
+
+**Step 1.** Verify the example boots:
+
+```bash
+PYTHONPATH=. python3 examples/claude_desktop_mcp_arm.py --selfcheck
+# [ghostloop] backend=mock_arm
+# [ghostloop] primitives=['move_to', 'pick', 'place', 'scan']
+# [ghostloop] gates=['RateLimitGate', 'GeofenceGate', 'ForceCapGate', 'ActionSmoothingGate', 'HumanInTheLoopGate']
+# [ghostloop] selfcheck step status=ok ...
+```
+
+**Step 2.** Install the MCP package:
+
+```bash
+pip install ghostloop[mcp]      # or just: pip install mcp
+```
+
+**Step 3.** Wire it into Claude Desktop.
+
+Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows), copying the relevant block from [`examples/claude_desktop_config.json`](examples/claude_desktop_config.json):
+
+```jsonc
+{
+  "mcpServers": {
+    "ghostloop": {
+      "command": "python3",
+      "args": ["/absolute/path/to/ghostloop/examples/claude_desktop_mcp_arm.py"],
+      "env": { "GHOSTLOOP_BACKEND": "mock" }
+    }
+  }
+}
+```
+
+**Step 4.** Restart Claude Desktop. New conversations get tools: `list_primitives`, `step`, `move_to(x, y, z)`, `pick(object_id)`, `place()`, `scan(radius)`, `state`, `recent_trace(n)`.
+
+Try this prompt: *"Use the ghostloop tools to move to (0.4, 0.0, 0.5), then scan with radius 0.3, then move to (0.6, 0.2, 0.5)."* Watch the geofence reject targets outside [-0.6, 0.6].
+
+To upgrade from the mock arm to **real physics in MuJoCo**, change one env var:
+
+```jsonc
+"env": {
+  "GHOSTLOOP_BACKEND": "mujoco",
+  "GHOSTLOOP_MUJOCO_MODEL": "/absolute/path/to/franka_panda.xml"
+}
+```
+
+(install MuJoCo first: `pip install ghostloop[mujoco]`).
+
+### 3. Drive a real arm via ROS 2 (production)
+
+Same script, same MCP contract — only the Backend changes. Prerequisites:
+
+- A ROS 2 distro installed (`apt install ros-humble-desktop`).
+- Your arm's ROS 2 driver running (Franka, UR5e, Kinova, MoveIt 2 — every major arm ships one).
+- `source /opt/ros/humble/setup.bash` in the same shell that launches Claude Desktop, so the subprocess inherits `$AMENT_PREFIX_PATH` and friends.
+
+Then update Claude Desktop config:
+
+```jsonc
+"env": {
+  "GHOSTLOOP_BACKEND": "ros2",
+  "GHOSTLOOP_ROS2_NODE": "ghostloop_arm",
+  "GHOSTLOOP_CMD_VEL": "/franka/cmd",
+  "GHOSTLOOP_JOINT_STATES": "/franka/joint_states",
+  "GHOSTLOOP_FORCE_TORQUE": "/franka/wrench"
+}
+```
+
+> ⚠ **Before pointing this at a real arm:** open `examples/claude_desktop_mcp_arm.py` and adjust `WORKSPACE_MIN` / `WORKSPACE_MAX` / `MAX_FORCE_N` / `MAX_VELOCITY_MS` to match your arm's reach + payload + safe operating envelope. Keep `HITL_OPERATIONS = ["pick", "place"]` for the first dozen episodes — every grasp will prompt your terminal for approval. Read the trace logs, build trust, then relax HITL.
+
+The default ROS 2 setup ships `publish_twist` / `stop_motion` action helpers; arm-specific primitives (Franka pick/place, UR5e move_to, etc.) are one-file-per-arm. See `ghostloop/backends/ros2.py` for the contract.
+
+### 4. Run programmatically
+
+For everything else — bench harnesses, training loops, post-hoc analysis — use ghostloop as a library. Examples below.
+
+## Library API examples
 
 ### Run an LLM-driven episode
 
@@ -426,8 +511,10 @@ ghostloop/
 examples/
   pick_and_place.py                    scripted end-to-end demo
   bench_with_without_geofence.py       paired-comparison demo
+  claude_desktop_mcp_arm.py            Claude Desktop -> ghostloop -> arm   (v1.0)
+  claude_desktop_config.json           sample Claude Desktop MCP config     (v1.0)
 
-tests/                                  296 tests (8 live-gated)
+tests/                                  314 tests (8 live-gated)
   test_core.py                          23
   test_llm_policy.py                    14
   test_bench.py                         22
@@ -440,6 +527,7 @@ tests/                                  296 tests (8 live-gated)
   test_v08_additions.py                 28
   test_v09_additions.py                 25
   test_v10_additions.py                 33
+  test_v10_v1_additions.py              18
 
 assets/                                  brand mark + wordmark variants
 docs/                                    architecture / migration / brand notes
