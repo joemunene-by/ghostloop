@@ -6,17 +6,48 @@ to the file with full instructions.
 
 Order matters — earlier items unblock later ones.
 
-## Day 1 — distribution foundations
+## Day 1 — distribution foundations (now automated)
 
-- [ ] **Publish to PyPI** ([release/RELEASE_TO_PYPI.md](release/RELEASE_TO_PYPI.md))
-  Wheel + sdist already built and `twine check`-passed. Need PyPI
-  account + token; one-time `twine upload` after that. Once live at
-  `pypi.org/project/ghostloop`, every other artifact references it.
+PyPI Trusted Publishing + HuggingFace deploy are wired through GitHub
+Actions. Once the one-time setup below is done, every release happens
+by pushing a git tag.
 
-- [ ] **Deploy HuggingFace Space** ([spaces/DEPLOY_TO_HF.md](spaces/DEPLOY_TO_HF.md))
-  Gradio app, `requirements.txt`, README with HF metadata frontmatter
-  all written. Need HF account + token + 5 minutes of `git push`.
-  Live URL goes in the README, the preprint, and the demo video CTA.
+- [ ] **One-time PyPI Trusted Publishing setup** (Joe, ~5 min)
+  1. Visit https://pypi.org/manage/account/publishing/ → "Add a new pending publisher".
+  2. Project name: `ghostloop`. Owner: `joemunene-by`. Repo: `ghostloop`.
+     Workflow: `publish-pypi.yml`. Environment name: `pypi`.
+  3. Save. PyPI is now ready to accept OIDC pushes from `.github/workflows/publish-pypi.yml`.
+  4. (You said you've already wired this — verify the form fields match
+     the workflow file exactly. Mismatched workflow filename or env name
+     is the most common cause of the OIDC handshake failing.)
+
+- [ ] **One-time HF token paste** (Joe, ~2 min)
+  1. Generate a Write-access token at https://huggingface.co/settings/tokens.
+  2. In the ghostloop repo on GitHub: Settings → Secrets and variables → Actions
+     → New repository secret. Name: `HF_TOKEN`. Value: paste.
+  3. (Optional) Add a repo *variable* `HF_USERNAME` if your HF account
+     isn't `joemunene-by`. Same screen, "Variables" tab.
+
+- [ ] **Publish v1.0.0 to PyPI** (one command)
+  ```bash
+  git tag -a v1.0.0 -m "v1.0.0 — production release"
+  git push origin v1.0.0
+  ```
+  The `publish-pypi.yml` workflow runs: version-tag-match check, full
+  test suite, sdist + wheel build, `twine check`, OIDC-authenticated
+  PyPI upload. Status visible at github.com/joemunene-by/ghostloop/actions.
+  (We already pushed the v1.0.0 tag earlier this session — that tag
+  predates the workflow file; for the first publish, push a temporary
+  v1.0.1 tag with the same artifacts after fixing any version mismatch,
+  OR delete + re-tag v1.0.0 after merging this commit.)
+
+- [ ] **Publish the HuggingFace Space** (no command needed)
+  The first push to `main` that touches `spaces/ghostloop-demo/**` (or
+  any change to the workflow file itself) triggers
+  `publish-hf-space.yml`. The workflow creates the Space if it doesn't
+  exist and uploads the directory. After this commit lands, the Space
+  is live at `huggingface.co/spaces/joemunene-by/ghostloop-demo`
+  within ~3 minutes (HF build time on the free tier).
 
 ## Day 2 — the demo
 

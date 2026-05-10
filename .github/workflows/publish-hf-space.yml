@@ -1,0 +1,87 @@
+name: Deploy HuggingFace Space
+
+# Triggers on a push to main that touches the Space directory or a
+# manual run from the Actions tab. The Space lives at
+# https://huggingface.co/spaces/joemunene-by/ghostloop-demo and re-builds
+# automatically once new files are pushed to its remote.
+#
+# REQUIRES (one-time, in this repo's Settings → Secrets and variables → Actions):
+#   HF_TOKEN — a HuggingFace write-access token (User Access Token,
+#              role: Write). Generate at https://huggingface.co/settings/tokens.
+#              The Space gets created on first push if it doesn't exist
+#              yet (HF_USERNAME below must own the repo).
+#
+# Optional repository variables:
+#   HF_USERNAME    HuggingFace username/org (default: joemunene-by).
+#   HF_SPACE_NAME  Space slug (default: ghostloop-demo).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "spaces/ghostloop-demo/**"
+      - ".github/workflows/publish-hf-space.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Sync spaces/ghostloop-demo to HF
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install huggingface_hub
+        run: pip install --upgrade "huggingface_hub>=0.24"
+
+      - name: Sync Space directory to HF
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_USERNAME: ${{ vars.HF_USERNAME || 'joemunene-by' }}
+          HF_SPACE_NAME: ${{ vars.HF_SPACE_NAME || 'ghostloop-demo' }}
+        run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo "::error::HF_TOKEN secret is not set in this repo. Add it under"
+            echo "::error::Settings → Secrets and variables → Actions → New repository secret."
+            exit 1
+          fi
+          python <<'PY'
+          import os
+          from huggingface_hub import HfApi
+
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          repo_id = f"{os.environ['HF_USERNAME']}/{os.environ['HF_SPACE_NAME']}"
+
+          # Idempotent: create Space if it doesn't exist; ignore the
+          # "already exists" failure so reruns are safe.
+          try:
+              api.create_repo(
+                  repo_id=repo_id,
+                  repo_type="space",
+                  space_sdk="gradio",
+                  private=False,
+                  exist_ok=True,
+              )
+              print(f"[hf] ensured space exists: {repo_id}")
+          except Exception as exc:
+              print(f"[hf] create_repo non-fatal: {exc}")
+
+          # Push only the Space subdirectory.
+          info = api.upload_folder(
+              repo_id=repo_id,
+              repo_type="space",
+              folder_path="spaces/ghostloop-demo",
+              commit_message=os.environ.get("GITHUB_SHA", "")[:8] or "deploy",
+              ignore_patterns=["__pycache__", "*.pyc", ".DS_Store"],
+          )
+          print(f"[hf] commit: https://huggingface.co/spaces/{repo_id}/commit/{info.oid}")
+          print(f"[hf] live at: https://huggingface.co/spaces/{repo_id}")
+          PY
