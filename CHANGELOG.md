@@ -1,5 +1,123 @@
 # Changelog
 
+## [0.3.0] — 2026-05-10 — PyBullet + Menagerie loader + episode catalogue + replay + 5 gates + CLI
+
+Six substantial additions in one release. Pulls forward roadmap items v0.3
+(PyBullet, episode catalogue, trace replay) AND v0.4 (ForceCap + HITL
+gates), plus adds the MuJoCo Menagerie loader and a `python -m ghostloop`
+CLI that wasn't on the roadmap at all.
+
+### PyBulletBackend (ghostloop/backends/pybullet.py)
+
+Bullet Physics backend, BSD-licensed, single-wheel install on every major
+OS. Conditional import: package itself imports without ``pybullet``;
+backend errors with install hint at construction time. URDF loading,
+end-effector link pose snapshot, joint position control + reset,
+DIRECT/GUI mode, gravity + timestep wired. Bound `move_to` and `scan`
+primitives shipping with names matching MockBackend + MuJoCoBackend so
+policies stay backend-agnostic.
+
+  pip install ghostloop[pybullet]
+
+### MuJoCo Menagerie loader (ghostloop/backends/menagerie.py)
+
+Resolves friendly model names (`"franka"`, `"ur5e"`, `"stretch"`, etc.)
+to the right XML inside the MuJoCo Menagerie. Two cases:
+
+  - Menagerie cloned locally (set MENAGERIE_PATH or pass menagerie_root):
+    we find the model XML and return its absolute path.
+  - User has nothing: we shallow-clone (--depth=1 --filter=blob:none)
+    into ~/.cache/ghostloop/mujoco_menagerie on first use (~80 MB).
+    Subsequent calls reuse the clone.
+
+10 known model aliases shipped: franka, panda, ur5e, ur10e, stretch,
+allegro, spot, aloha, shadow, sawyer. ``load_franka()`` is a one-liner
+helper that returns a ready-to-use MuJoCoBackend.
+
+### Episode catalogue (ghostloop/bench/catalogue.py)
+
+Pre-built episode builders for the bench harness:
+
+  reach_targets(targets)        — N-target move suite
+  pick_and_place_pairs(pairs)   — pick A, place B suite
+  scan_at_targets(waypoints)    — visit each waypoint and scan
+  geofence_violations(in, out)  — half-inside, half-outside regression suite
+
+Plus three convenience presets: preset_reach_8, preset_pick_and_place_4,
+preset_geofence_smoke (the 8-episode suite the v0.2 demo used inline).
+
+### Trace replay (ghostloop/traces/)
+
+Read trace JSONL back into structured ReplayedEvent records. Three entry
+points:
+
+  load_trace(path)        full read into (TraceHeader, list[ReplayedEvent])
+  iter_events(path)       streaming iterator (large traces)
+  summarize_trace(path)   high-level dict with by_status / by_intent /
+                          deny_reasons / total_duration_ms
+
+The inverse of Trace.write_jsonl(); enables regression tests, fleet
+ingestion, post-hoc analysis, and the new `replay` CLI subcommand.
+
+### Two new policy gates
+
+ForceCapGate (ghostloop/policies/force_cap.py):
+  Reject intents whose declared force / torque / velocity / acceleration /
+  effort / speed exceeds a configured cap. Pass-through for intents
+  without those keys; uses absolute values; non-numeric values silently
+  skipped (don't crash on weird input). Caps default to None (= unlimited).
+
+HumanInTheLoopGate (ghostloop/policies/human_in_the_loop.py):
+  Block selected primitives until an approver returns True. Synchronous
+  by design — the runtime blocks on it. Three approvers shipped:
+  always_approve, always_deny, cli_approver (stdin prompt). Production
+  deployments wire Slack-webhook / dashboard-poller / queue readers.
+
+Pipeline now ships five gates total: DenyList, RateLimit, Geofence,
+ForceCap, HITL.
+
+### CLI (ghostloop/__main__.py)
+
+  python -m ghostloop info               — version + backends + primitives
+  python -m ghostloop demo               — bundled scripted demo
+  python -m ghostloop bench              — geofence-impact paired bench
+  python -m ghostloop replay <trace>     — summarise a JSONL trace
+  python -m ghostloop replay <trace> --json   — machine-readable output
+
+Plus a console script: after install, `ghostloop` is on PATH.
+
+### Tests
+
+  test_v03_additions.py NEW — 25 tests:
+    PyBullet conditional      2
+    ForceCapGate              6
+    HumanInTheLoopGate        5
+    Episode catalogue         5
+    Trace replay              3
+    Menagerie loader (offline) 3
+    CLI subcommands           5
+
+  Suite: 64 -> 93 passing, 5 skipped (live MuJoCo) in 0.68s.
+
+### pyproject
+
+  version 0.2.0 -> 0.3.0
+  optional-dependencies: + pybullet>=3.2
+  Added [project.scripts] ghostloop = "ghostloop.__main__:main"
+
+### Roadmap progress
+
+  v0.3 originally planned: PyBullet ✓, episode catalogue ✓, replay ✓
+  v0.4 originally planned: ForceCap ✓, HITL ✓
+  Bonus shipped: MuJoCo Menagerie loader, CLI, console script
+
+  Next planned (v0.4 / v0.5):
+    - VLABackend adapter (OpenVLA / pi-0 / RT-2 emit primitives directly)
+    - Vision pipeline: camera primitives, RGB-D fusion
+    - End-to-end demo: LLM-driven pick on a real Franka in the menagerie
+
+---
+
 ## [0.2.0] — 2026-05-10 — MuJoCoBackend + LLMPolicy + bench harness + brand assets
 
 Three substantial additions on top of v0.1, all shipped together so the v0.2

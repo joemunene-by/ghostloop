@@ -15,6 +15,15 @@ reports on the same bench can be paired-compared for significance.
 from .episode import Episode, EpisodeRunner, EpisodeResult
 from .report import RunReport, summarize, wilson_ci
 from .compare import paired_compare, mcnemar_p, cohens_h, effect_label
+from .catalogue import (
+    geofence_violations,
+    pick_and_place_pairs,
+    preset_geofence_smoke,
+    preset_pick_and_place_4,
+    preset_reach_8,
+    reach_targets,
+    scan_at_targets,
+)
 
 __all__ = [
     "Episode",
@@ -27,4 +36,12 @@ __all__ = [
     "mcnemar_p",
     "cohens_h",
     "effect_label",
+    # catalogue
+    "reach_targets",
+    "pick_and_place_pairs",
+    "scan_at_targets",
+    "geofence_violations",
+    "preset_reach_8",
+    "preset_pick_and_place_4",
+    "preset_geofence_smoke",
 ]

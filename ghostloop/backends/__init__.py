@@ -9,6 +9,24 @@ time, never at package import:
   pip install ghostloop[ros2]     # ROS2Backend (planned v0.7)
 """
 
+from .menagerie import (
+    KNOWN_MODELS,
+    MenagerieError,
+    ensure_menagerie,
+    load_franka,
+    resolve_model,
+)
 from .mujoco import MuJoCoBackend, mujoco_available
+from .pybullet import PyBulletBackend, pybullet_available
 
-__all__ = ["MuJoCoBackend", "mujoco_available"]
+__all__ = [
+    "MuJoCoBackend",
+    "PyBulletBackend",
+    "mujoco_available",
+    "pybullet_available",
+    "MenagerieError",
+    "KNOWN_MODELS",
+    "ensure_menagerie",
+    "load_franka",
+    "resolve_model",
+]

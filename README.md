@@ -8,8 +8,8 @@ A tool-using agent runtime, fail-closed safety pipeline, statistically-rigorous 
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Status](https://img.shields.io/badge/status-v0.2.0%20%E2%80%94%20MuJoCoBackend%20%2B%20LLMPolicy%20%2B%20bench%20harness-14B8A6.svg)](#)
-[![Tests](https://img.shields.io/badge/tests-64%20passed%2C%205%20live--gated-14B8A6.svg)](#)
+[![Status](https://img.shields.io/badge/status-v0.3.0%20%E2%80%94%20PyBullet%20%2B%20Menagerie%20%2B%20catalogue%20%2B%20replay%20%2B%20CLI-14B8A6.svg)](#)
+[![Tests](https://img.shields.io/badge/tests-93%20passed%2C%205%20live--gated-14B8A6.svg)](#)
 
 </div>
 

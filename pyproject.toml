@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ghostloop"
-version = "0.2.0"
+version = "0.3.0"
 description = "The agent loop, embodied. A tool-using runtime + fail-closed safety pipeline + sim-first execution harness for embodied AI."
 readme = "README.md"
 license = "MIT"
@@ -36,6 +36,10 @@ dependencies = []
 [project.optional-dependencies]
 dev = ["pytest>=7"]
 mujoco = ["mujoco>=3.0"]
+pybullet = ["pybullet>=3.2"]
+
+[project.scripts]
+ghostloop = "ghostloop.__main__:main"
 
 [project.urls]
 Homepage = "https://github.com/joemunene-by/ghostloop"
