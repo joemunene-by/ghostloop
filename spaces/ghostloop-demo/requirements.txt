@@ -1,0 +1,2 @@
+gradio>=4.44
+ghostloop>=1.0.0

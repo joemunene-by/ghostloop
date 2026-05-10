@@ -1,0 +1,365 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage[numbers,sort&compress]{natbib}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=teal,
+  urlcolor=teal,
+  citecolor=teal,
+}
+
+\title{\texttt{ghostloop}: A Post-Hoc Analysis Layer for Embodied Agents}
+\author{
+  Joe Munene \\
+  Complex Developers \\
+  \texttt{joemunene984@gmail.com}
+}
+\date{May 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+LLM-agent frameworks have converged on a stable shape: a tool registry,
+a policy pipeline, and a structured trace log. Robotics frameworks have
+not. While ROS 2 provides middleware and Vision-Language-Action (VLA)
+models provide policies, no widely-used layer sits between them with
+the analytical surface that LLM-safety practice now expects. We
+describe \texttt{ghostloop}, an open-source agent runtime for
+embodied AI built around a fail-closed safety pipeline and a typed
+trace, and contribute a \textbf{post-hoc analysis tier} that is
+absent from contemporary robotics frameworks: counterfactual trace
+replay, leave-one-out causal failure attribution, LLM-as-judge
+trace scoring, declarative property mining, and adversarial Episode
+search via CMA-ES. We position these as natural transplants from
+LLM safety into embodied AI, formalise their semantics over a
+\texttt{TraceEvent} DAG, and demonstrate them on six robot
+morphologies (arm, mobile base, quadruped, drone, mobile-arm,
+humanoid) through six backends (Mock, MuJoCo, PyBullet, Gymnasium,
+ROS 2, RandomizedBackend). The runtime ships 333 tests across
+eleven releases and is publicly available at
+\url{https://github.com/joemunene-by/ghostloop} under the MIT
+license.
+\end{abstract}
+
+\section{Introduction}
+
+Robotics in 2026 has two healthy ecosystems with a missing middle.
+ROS 2 \citep{macenski2022ros2} provides middleware: a message bus,
+lifecycle management, drivers, navigation. VLA models such as
+OpenVLA \citep{kim2024openvla}, RT-2 \citep{brohan2023rt2}, $\pi_0$
+\citep{black2024pi0}, and Octo \citep{octo2024} provide policies:
+vision-and-language conditioned action heads. Neither layer exposes
+what LLM-agent practice now treats as standard: a typed tool
+registry, a fail-closed policy pipeline, paired-comparison eval with
+McNemar exact tests \citep{mcnemar1947note}, and post-hoc analytical
+tooling for traces.
+
+We propose \texttt{ghostloop}, an open-source runtime that fills this
+gap. The runtime borrows shape from LLM-agent frameworks but binds
+to robot primitives instead of API tools, with a backend abstraction
+spanning sim and hardware. The contribution of this paper is not the
+runtime itself: many such runtimes exist as ad-hoc internal tooling
+in robotics labs. Our contribution is the \textbf{post-hoc analysis
+tier} that comes with it, transplanted from LLM-safety practice and
+made native to a robotics trace shape.
+
+Specifically:
+\begin{enumerate}
+  \item \textbf{Counterfactual trace replay} (\S\ref{sec:counterfactual}):
+        re-run a recorded trace's observations through a candidate
+        policy and diff its decisions step-by-step.
+  \item \textbf{Causal failure attribution} (\S\ref{sec:causal}):
+        leave-one-out ablation that ranks events by necessity for
+        a property violation.
+  \item \textbf{LLM-as-judge trace scoring} (\S\ref{sec:judge}): score
+        recorded episodes against a four-criterion rubric using any
+        OpenAI-compatible chat client.
+  \item \textbf{Declarative property mining} (\S\ref{sec:mining}):
+        discover candidate invariants from a corpus of successful
+        traces and promote them to formal \texttt{Property} objects.
+  \item \textbf{Adversarial Episode search} (\S\ref{sec:adversarial}):
+        random / grid / CMA-ES search over Episode initial states
+        to find failure-prone seeds.
+\end{enumerate}
+
+Each pillar exists in adjacent fields (LLM red-teaming, formal
+verification, mutation testing) but, to our knowledge, has not been
+unified inside a robotics framework. We argue this unification is
+the missing piece: as VLA models become the dominant policy
+substrate, the runtime around them must adopt the analytical rigor
+LLM-safety has been building for half a decade.
+
+\section{Related Work}
+
+\paragraph{Agent runtimes for LLMs.} The pattern of typed tool
+registry plus policy pipeline plus structured trace appears in
+LangChain \citep{langchain2022}, LlamaIndex \citep{llamaindex2023},
+the AutoGen agent framework \citep{wu2023autogen}, and Anthropic's
+Model Context Protocol (MCP) \citep{anthropic2024mcp}. Our
+\texttt{Runtime} mirrors this shape exactly; the novelty is binding
+it to robot \texttt{Primitive}s rather than HTTP / Python tools.
+
+\paragraph{Safety in embodied AI.} Constraint-based safety appears
+in OMPL motion planning \citep{sucan2012ompl}, formal-method
+verification of controllers \citep{kress2017synthesis}, and
+control-barrier-function approaches \citep{ames2019cbf}. None of
+these sit at the agent-loop layer; they target the controller
+or planner. Our \texttt{PolicyPipeline} layer is upstream of all
+of them and gates the LLM's intent emission directly.
+
+\paragraph{Counterfactual reasoning in ML.} Counterfactual
+explanations \citep{wachter2017counterfactual} and counterfactual
+reinforcement learning \citep{buesing2018woulda} are well studied
+for decision-making models; \citet{anthropic2024sleeper}
+demonstrate counterfactual prompting in LLM safety auditing. We
+transplant the technique to a robot trace: given a trace from
+policy $A$, ask what policy $B$ would have done at each step.
+
+\paragraph{Causal attribution.} Shapley-value attribution for ML
+\citep{lundberg2017shap} and counterfactual root-cause analysis
+\citep{ji2023rca} are now standard for ML diagnostics. Robotics
+incident analysis remains predominantly manual.
+
+\paragraph{LLM-as-judge.} Originally validated for chatbot
+preference modelling \citep{zheng2023judging,gu2024llmjudge}, the
+LLM-as-judge methodology has spread to code-generation eval and
+RAG quality. Applying it to robot trace eval against a structured
+safety + task rubric is, to our knowledge, novel.
+
+\paragraph{Adversarial testing in robotics.} Domain randomization
+for sim-to-real \citep{tobin2017dr} randomises uniformly; our
+adversarial Episode search maximises an explicit failure objective
+via CMA-ES \citep{hansen2003cmaes}, making the test budget
+adaptive.
+
+\section{Runtime Architecture}
+
+\subsection{Core abstractions}
+
+A \texttt{Runtime} composes a \texttt{Backend} (sim or hardware
+adapter), a \texttt{PrimitiveRegistry} (named callables), and a
+\texttt{PolicyPipeline} (ordered fail-closed gates). One step
+runs:
+
+\begin{verbatim}
+  intent     -> registry.get(intent.name) -> primitive
+  primitive  -> pipeline.check(intent, primitive) -> Decision
+  if ALLOW   -> primitive.call(backend, **intent.args) -> Result
+  always     -> trace.append(TraceEvent(intent, decision, result, ...))
+\end{verbatim}
+
+A \texttt{TraceEvent} carries: \texttt{step}, \texttt{intent},
+\texttt{decision}, \texttt{result}, \texttt{state\_before},
+\texttt{state\_after}, and a \texttt{timestamp}. The
+\texttt{Trace} is append-only and JSON-serialisable. This typed
+event shape is the substrate for every analytical operator in
+\S\ref{sec:posthoc}.
+
+\subsection{Backends and morphologies}
+
+Six backends ship: \texttt{MockBackend} (in-memory, no install),
+\texttt{MuJoCoBackend} \citep{todorov2012mujoco},
+\texttt{PyBulletBackend} \citep{coumans2016pybullet},
+\texttt{GymnasiumBackend} \citep{towers2023gymnasium},
+\texttt{ROS2Backend}, and a \texttt{RandomizedBackend} wrapper that
+applies position noise, timing jitter, action dropout, and
+sticky-action repeats for sim-to-real \citep{tobin2017dr}.
+
+A cross-morphology primitive library covers seven categories
+(\texttt{MOBILE\_BASE}, \texttt{QUADRUPED}, \texttt{HUMANOID},
+\texttt{AERIAL}, \texttt{DEXTEROUS}, \texttt{SENSING},
+\texttt{GENERIC}) so a single \texttt{RobotProfile} declaration
+adapts the runtime from a Franka 7-DOF arm to a Spot quadruped or a
+Tello quadcopter without code changes.
+
+\subsection{Safety pipeline}
+
+Twelve gates ship: \texttt{DenyListGate}, \texttt{RateLimitGate},
+\texttt{GeofenceGate}, \texttt{ForceCapGate}, \texttt{Cooldown\-Gate},
+\texttt{TimeWindowGate}, \texttt{ActionSmoothingGate} (velocity /
+acceleration limits), \texttt{HumanInTheLoopGate}, \texttt{Obstacle\-Avoid\-anceGate},
+\texttt{RetryPolicy}, plus \texttt{LLMPolicy} and \texttt{VLAPolicy}
+adapters. Gates compose; the pipeline short-circuits on the first
+\texttt{DENY}.
+
+\section{Post-Hoc Analysis Tier}
+\label{sec:posthoc}
+
+This is the contribution. The \texttt{TraceEvent} substrate makes
+each operator below a small typed function over a \texttt{Trace}
+object.
+
+\subsection{Counterfactual trace replay}
+\label{sec:counterfactual}
+
+Given a recorded \texttt{Trace} $T$ from policy $\pi_A$ and a
+candidate policy $\pi_B$, we walk every event of $T$ and ask
+$\pi_B$ what intent it would emit given the same
+\texttt{state\_before}. The output is a \texttt{Counterfactual\-Trace}:
+
+\[
+  \text{CF}(T, \pi_B) = \{(\text{state}_i, \pi_A(\cdot)_i, \pi_B(\text{state}_i)) : i \in T\}
+\]
+
+with metrics \emph{divergence rate} (fraction of events where
+$\pi_A$ and $\pi_B$ disagree) and \emph{first-divergence step}
+(earliest disagreement). We do not re-execute the world; this is
+shadow-mode reasoning, the same shape used in LLM safety auditing
+\citep{anthropic2024sleeper}. Re-execution against a sim backend
+is straightforward via the standard \texttt{Runtime} loop.
+
+\subsection{Causal failure attribution}
+\label{sec:causal}
+
+Given a failing trace $T$ for property $\phi$, for each event
+$e_i \in T$ we evaluate $\phi(T \setminus \{e_i\})$. Each
+$e_i$ receives a \emph{necessity} score:
+
+\[
+  \text{necessity}(e_i) = \begin{cases}
+    1.0 & \text{if } \phi(T \setminus \{e_i\}) \text{ holds} \\
+    0.5 \cdot \frac{|V_T| - |V_{T \setminus \{e_i\}}|}{|V_T|} & \text{otherwise}
+  \end{cases}
+\]
+
+where $V_T$ is the set of violations $\phi$ records on $T$. Events
+whose removal restores $\phi$ are causally necessary; events whose
+removal merely reduces violation count receive partial credit. A
+top-$k$ ranking surfaces likely root causes. We additionally
+provide \texttt{minimal\_cause\_set} for greedy multi-event
+attribution.
+
+\subsection{LLM-as-judge}
+\label{sec:judge}
+
+Following \citet{zheng2023judging}, we summarise a trace and pass
+it to a chat client with a four-criterion rubric:
+\textit{task\_completion}, \textit{safety\_adherence},
+\textit{efficiency}, \textit{recoverability}, each scored in
+$[0,1]$. The judge returns structured JSON; the wrapper validates
+and exposes the sub-scores plus a single composite. A
+\texttt{HeuristicJudge} fallback ships for air-gapped CI: weighted
+predicate scoring (no-violations, fraction-allowed, fraction-OK,
+step-count) gives a scoring shape compatible with the LLM judge
+without an external model call.
+
+\subsection{Declarative property mining}
+\label{sec:mining}
+
+Given a corpus of successful traces $\mathcal{T} = \{T_1, \dots, T_n\}$,
+three pattern miners run:
+
+\paragraph{Followup transitions.} For every pair of primitive
+names $(x, y)$, count traces where $x$ is followed by $y$ within
+window $W$. If support and confidence both exceed threshold $\tau$,
+emit a \texttt{MinedProperty} that fails when $x$ is not followed
+by $y$ within $W$ on a future trace.
+
+\paragraph{Numeric bounds.} For each named observation field,
+take the empirical max across $\mathcal{T}$, multiply by margin
+factor $\mu$, and emit a never-exceeds property at that threshold.
+
+\paragraph{Workspace bounds.} For every recorded position, take
+the empirical bounding box across $\mathcal{T}$ and emit a
+\texttt{StaysInsideWorkspace} candidate.
+
+Each \texttt{MinedProperty} carries support, confidence, and a
+\texttt{promote()} method returning a real \texttt{Property} the
+operator can ratchet into the formal property engine.
+
+\subsection{Adversarial Episode search}
+\label{sec:adversarial}
+
+Given an Episode template and a parameter range, three search
+strategies emit failure-prone seeds:
+
+\begin{itemize}
+  \item \textbf{Random}: uniform sampling, baseline.
+  \item \textbf{Grid}: exhaustive cartesian product.
+  \item \textbf{CMA-ES}: \citep{hansen2003cmaes} biases toward
+        regions with high failure score, where failure score $=$
+        violation\_count $+ \mathbb{1}[\text{predicate failed}]$.
+\end{itemize}
+
+Worst-scoring seeds promote to the regression bench: each is now
+a deterministic Episode the operator can re-run on every commit.
+
+\section{Implementation}
+
+\texttt{ghostloop} is implemented in pure Python 3.10+ with zero
+runtime dependencies in the core. Optional extras lazy-import
+backend libraries: \texttt{ghostloop[mujoco]},
+\texttt{ghostloop[pybullet]}, \texttt{ghostloop[gym]},
+\texttt{ghostloop[mcp]}, \texttt{ghostloop[dashboard]},
+\texttt{ghostloop[otel]}. Conditional imports raise
+\texttt{ImportError} with install hints at construction time only,
+never at package import.
+
+The codebase is 11 releases, 70+ modules, $\sim$7,000 lines of
+Python, and 333 tests (8 live-gated for hardware libraries). Tests
+cover every analytical operator above plus per-backend smoke
+tests, a YAML-loadable robot profile system, and the MCP server
+across stdio, streamable-HTTP, and SSE transports.
+
+\section{Discussion and Limitations}
+
+\paragraph{No re-execution counterfactuals yet.} The shadow-mode
+counterfactual replay tells you what policy $\pi_B$ would have
+\emph{chosen}; it does not tell you what would have happened. A
+re-execution variant against a deterministic sim backend is
+straightforward but adds computational cost; we leave it as a
+future addition.
+
+\paragraph{LLM-as-judge calibration.} We do not evaluate the
+judge against human raters; the rubric was designed for clarity,
+not validated against ground truth. Adopting the rater-pair
+calibration procedure of \citet{zheng2023judging} on a labelled
+trace corpus is the right next step.
+
+\paragraph{Mining is statistical, not formal.} The mined
+properties capture empirical regularities from a successful-trace
+corpus. They will not generalise to behaviour distributions
+different from the corpus. We treat them as \emph{candidate}
+invariants that an operator promotes, not as automatic safety
+guarantees.
+
+\paragraph{No published numbers vs OpenVLA / $\pi_0$ here.}
+\texttt{ghostloop} ships a \texttt{VLABenchmarkSuite} pre-populated
+with published baselines from these papers, with the bench
+harness running. We did not run a real OpenVLA-7B checkpoint
+against the bench in time for this submission; reproducing those
+numbers under the safety pipeline is the obvious follow-up.
+
+\section{Conclusion}
+
+We introduced \texttt{ghostloop}, an open-source agent runtime
+for embodied AI that contributes a post-hoc analysis tier
+transplanted from LLM-safety practice: counterfactual trace
+replay, causal failure attribution, LLM-as-judge, property
+mining, and adversarial Episode search. We argue this analytical
+surface — already standard in LLM agent frameworks — is the
+missing piece for robotics frameworks as VLA models become the
+dominant policy substrate. The library is MIT-licensed at
+\url{https://github.com/joemunene-by/ghostloop} and installable
+via \texttt{pip install ghostloop}.
+
+\paragraph{Acknowledgements.} This work began as a sibling
+project to \texttt{GhostLM}, an 81M-parameter cybersecurity
+language model trained from scratch
+(\url{https://github.com/joemunene-by/GhostLM}). The agent-loop
+shape and statistical bench harness are direct ports.
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\end{document}

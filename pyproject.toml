@@ -8,7 +8,8 @@ version = "1.0.0"
 description = "The agent loop, embodied. A tool-using runtime + fail-closed safety pipeline + sim-first execution harness for embodied AI."
 readme = "README.md"
 license = "MIT"
-authors = [{name = "Joe Munene"}]
+authors = [{name = "Joe Munene", email = "joemunene984@gmail.com"}]
+maintainers = [{name = "Joe Munene", email = "joemunene984@gmail.com"}]
 requires-python = ">=3.10"
 keywords = [
     "robotics", "agent", "embodied-ai", "vla", "tool-use",
@@ -53,6 +54,8 @@ ghostloop = "ghostloop.__main__:main"
 [project.urls]
 Homepage = "https://github.com/joemunene-by/ghostloop"
 Repository = "https://github.com/joemunene-by/ghostloop"
+Issues = "https://github.com/joemunene-by/ghostloop/issues"
+Changelog = "https://github.com/joemunene-by/ghostloop/blob/main/CHANGELOG.md"
 "Sister Project — GhostLM" = "https://github.com/joemunene-by/GhostLM"
 
 [tool.setuptools.packages.find]
