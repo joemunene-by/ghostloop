@@ -15,10 +15,12 @@ Custom planners drop in alongside via the ``Planner`` Protocol.
 
 from .core import Planner, PlanResult
 from .builtin import PickAndPlacePlanner, TraversePlanner
+from .llm_planner import LLMPlanner
 
 __all__ = [
     "Planner",
     "PlanResult",
     "PickAndPlacePlanner",
     "TraversePlanner",
+    "LLMPlanner",
 ]

@@ -27,6 +27,7 @@ from .builtins import (
     NoConsecutiveDuplicateIntents,
     StaysInsideWorkspace,
 )
+from .combinators import AndProperty, NotProperty, OrProperty
 
 __all__ = [
     "Property",
@@ -37,4 +38,7 @@ __all__ = [
     "NeverExceedsRate",
     "NoConsecutiveDuplicateIntents",
     "StaysInsideWorkspace",
+    "AndProperty",
+    "OrProperty",
+    "NotProperty",
 ]

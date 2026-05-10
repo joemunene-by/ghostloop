@@ -16,6 +16,7 @@ from .human_in_the_loop import (
 )
 from .llm import LLMPolicy, LLMPolicyConfig, LLMPolicyError, llm_policy_loop
 from .rate_limit import RateLimitGate
+from .retry import RetryPolicy, is_any_error, is_transient_error
 from .vla import (
     ActionDecoder,
     DeltaXYZDecoder,
@@ -52,4 +53,8 @@ __all__ = [
     "ObstacleAvoidanceGate",
     "Sphere",
     "WorkspaceModel",
+    # Retry
+    "RetryPolicy",
+    "is_any_error",
+    "is_transient_error",
 ]

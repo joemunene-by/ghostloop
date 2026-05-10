@@ -147,6 +147,20 @@ def main(argv: list[str] | None = None) -> int:
     mp = sub.add_parser("mcp", help="Run the MCP server (stdio transport for Claude Desktop / Cursor)")
     mp.add_argument("--name", default="ghostloop")
 
+    ep = sub.add_parser("eval", help="Run a built-in bench preset and write a Markdown report")
+    ep.add_argument("--preset", default="geofence_smoke",
+                    choices=["geofence_smoke", "reach_8", "pick_and_place_4"],
+                    help="Episode catalogue preset to evaluate.")
+    ep.add_argument("--with-geofence", action="store_true",
+                    help="Apply a default GeofenceGate to every episode.")
+    ep.add_argument("--out", type=Path, default=None,
+                    help="Optional Markdown output path. Defaults to stdout.")
+
+    dp = sub.add_parser("diff", help="Diff two trace JSONL files step by step")
+    dp.add_argument("a", type=Path, help="First trace path")
+    dp.add_argument("b", type=Path, help="Second trace path")
+    dp.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+
     args = p.parse_args(argv)
     handlers = {
         "info": cmd_info,
@@ -155,8 +169,58 @@ def main(argv: list[str] | None = None) -> int:
         "replay": cmd_replay,
         "store": cmd_store,
         "mcp": cmd_mcp,
+        "eval": cmd_eval,
+        "diff": cmd_diff,
     }
     return handlers[args.cmd](args)
+
+
+def cmd_eval(args: argparse.Namespace) -> int:
+    from .bench import (
+        EpisodeRunner,
+        preset_geofence_smoke,
+        preset_pick_and_place_4,
+        preset_reach_8,
+        summarize,
+    )
+    from .core import PolicyPipeline
+    from .policies import GeofenceGate
+
+    presets = {
+        "geofence_smoke": preset_geofence_smoke,
+        "reach_8": preset_reach_8,
+        "pick_and_place_4": preset_pick_and_place_4,
+    }
+    eps = presets[args.preset]()
+    if args.with_geofence:
+        fence = PolicyPipeline(gates=[
+            GeofenceGate(min_corner=(-1, -1, -1), max_corner=(1, 1, 1)),
+        ])
+        for ep in eps:
+            ep.pipeline = fence
+    results = EpisodeRunner().run_all(eps)
+    rep = summarize(
+        results,
+        run_name="cli_eval" + ("+fence" if args.with_geofence else ""),
+        bench_name=args.preset,
+    )
+    md = rep.render_md()
+    if args.out:
+        args.out.write_text(md, encoding="utf-8")
+        print(f"wrote {args.out} ({rep.passed}/{rep.n} = {rep.rate:.1%})")
+    else:
+        print(md)
+    return 0
+
+
+def cmd_diff(args: argparse.Namespace) -> int:
+    from .traces import diff_traces
+    diff = diff_traces(args.a, args.b)
+    if args.json:
+        print(json.dumps(diff.to_json(), indent=2))
+    else:
+        print(diff.render_md())
+    return 0
 
 
 def cmd_store(args: argparse.Namespace) -> int:

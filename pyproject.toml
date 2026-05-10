@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ghostloop"
-version = "0.5.0"
+version = "0.6.0"
 description = "The agent loop, embodied. A tool-using runtime + fail-closed safety pipeline + sim-first execution harness for embodied AI."
 readme = "README.md"
 license = "MIT"
@@ -43,6 +43,7 @@ otel = [
     "opentelemetry-sdk>=1.20",
     "opentelemetry-exporter-otlp>=1.20",
 ]
+dashboard = ["fastapi>=0.100", "uvicorn[standard]>=0.20"]
 
 [project.scripts]
 ghostloop = "ghostloop.__main__:main"

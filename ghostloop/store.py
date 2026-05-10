@@ -132,7 +132,11 @@ class GhostloopStore:
 
     def __init__(self, path: str | Path = ":memory:") -> None:
         self.path = str(path)
-        self._conn = sqlite3.connect(self.path)
+        # check_same_thread=False so the dashboard FastAPI app (which serves
+        # requests from a thread pool) can read this connection. Writes are
+        # still single-threaded in practice; sqlite handles concurrent reads
+        # internally.
+        self._conn = sqlite3.connect(self.path, check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
         self._conn.executescript(SCHEMA)
         self._conn.commit()

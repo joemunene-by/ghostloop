@@ -5,6 +5,7 @@ JSON-per-event. Replay ingests that file and yields a stream of structured
 events for analysis, visualisation, regression tests, or fleet ingestion.
 """
 
+from .diff import StepDiff, TraceDiff, diff_events, diff_traces
 from .replay import (
     ReplayedEvent,
     TraceHeader,
@@ -15,7 +16,11 @@ from .replay import (
 
 __all__ = [
     "ReplayedEvent",
+    "StepDiff",
+    "TraceDiff",
     "TraceHeader",
+    "diff_events",
+    "diff_traces",
     "iter_events",
     "load_trace",
     "summarize_trace",

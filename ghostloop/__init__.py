@@ -37,9 +37,10 @@ from .core import (
     Trace,
     TraceEvent,
 )
+from .observations import ObservationBuffer, ObservationRecord
 from .store import EpisodeRow, GhostloopStore, RunRow
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 __all__ = [
     "AsyncPolicyGate",
@@ -51,6 +52,8 @@ __all__ = [
     "GhostloopStore",
     "Intent",
     "MockBackend",
+    "ObservationBuffer",
+    "ObservationRecord",
     "PolicyGate",
     "PolicyPipeline",
     "Primitive",

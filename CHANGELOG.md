@@ -1,5 +1,156 @@
 # Changelog
 
+## [0.6.0] — 2026-05-10 — Fleet + Dashboard + LLMPlanner + Retry + Diff + Observations + Combinators
+
+Eight additions across the production-ops surface. Multi-robot becomes
+first-class, the dashboard backend turns the SQLite store into a real
+HTTP API, LLM-driven planning lands as the bridge between VLAPolicy and
+TaskPlanner, and the operator toolkit (retry, diff, observation memory,
+property combinators, two new CLI subcommands) closes the gap between
+"runs in lab" and "runs in production".
+
+### Fleet (ghostloop/fleet/)
+
+Multi-robot abstractions over single-robot Runtimes.
+
+  RobotHandle      one robot — runtime + status + labels + last_seen
+                   heartbeat metadata. step() updates lifecycle status.
+  FleetRegistry    name -> RobotHandle index with selection helpers
+                   (filter_by_status, filter_by_label, stale-detection).
+  FleetDispatcher  load-balanced submission across robots via three
+                   strategies: FIRST_IDLE / ROUND_ROBIN / LEAST_BUSY.
+                   Pin to a specific robot via dispatch(intent, robot=).
+  FleetSnapshot    JSON-safe view aggregating idle/busy/error/offline
+                   counts plus per-robot snapshots — the data shape the
+                   dashboard / fleet UI consumes.
+  FleetError       raised on duplicate registration / unknown robot /
+                   empty fleet dispatch.
+  RobotStatus enum  IDLE / BUSY / OFFLINE / ERROR.
+
+### Dashboard (ghostloop/dashboard/)
+
+Read-only FastAPI HTTP surface over the SQLite store + an optional
+attached FleetRegistry. Conditional install:
+
+  pip install ghostloop[dashboard]
+
+create_dashboard_app(store, fleet=None, title=...) returns a ready
+ASGI app. Endpoints:
+
+  GET /healthz
+  GET /v1/store/stats
+  GET /v1/store/episodes?limit=N&backend=...
+  GET /v1/store/episodes/{episode_id}
+  GET /v1/store/runs?limit=N&bench_name=...
+  GET /v1/store/runs/{run_id}
+  GET /v1/fleet                          (only if fleet attached)
+  GET /v1/fleet/{robot_name}             (only if fleet attached)
+
+Wired up alongside this release as the data layer for a future Next.js
++ tRPC fleet UI matching the broader ghostloop ecosystem stack.
+``GhostloopStore`` now opens with ``check_same_thread=False`` so the
+FastAPI thread pool can read concurrently.
+
+### LLMPlanner (ghostloop/planning/llm_planner.py)
+
+Sister to LLMPolicy. Where LLMPolicy emits ONE intent per turn (closed
+loop), LLMPlanner asks the model for the FULL plan up front via a
+single ``submit_plan(steps=[...])`` tool call, then the runtime
+executes that plan under the safety pipeline.
+
+  - Same OpenAI-compatible wire format / config as LLMPolicy.
+  - tool_choice forces submit_plan, no free-form responses.
+  - JSON schema enumerates the registered primitive names so the model
+    can't hallucinate unknowns (or if it does, the runtime BLOCKS them
+    via the resolver).
+  - Per-step rationale + top-level rationale recorded in PlanResult.
+
+Use cases: hand-curated few-shot prompts (regression tests),
+hierarchical control (top-level decomposition + low-level controller),
+cost optimisation (one LLM call per episode beats N calls).
+
+### RetryPolicy (ghostloop/policies/retry.py)
+
+Wraps a Runtime and re-dispatches transient ERROR results.
+
+  - max_attempts cap (default 3 = 1 + 2 retries).
+  - Exponential backoff with configurable factor + jitter_frac.
+  - is_transient_error: matches network/timeout/busy patterns
+    (timeout, temporarily, try again, rate limit, busy, connection
+    reset, broken pipe, 503, 502, 429).
+  - is_any_error: aggressive retry — only when you trust the API.
+  - Custom predicates pluggable via ``classify``.
+  - BLOCKED results NEVER retried — those came from the safety
+    pipeline and the policy must respect them.
+
+### Trace diff (ghostloop/traces/diff.py)
+
+Side-by-side comparison of two Trace JSONLs. Step-by-step diff
+classifies each row as identical / diverged / only_a / only_b. First-
+divergence helper for fast triage; render_md() produces a publication-
+ready table for incident postmortems and policy A/B comparisons.
+
+### ObservationBuffer (ghostloop/observations.py)
+
+Fixed-size deque of recent ObservationRecords (intent name + args +
+status + observation + state_after + duration). Short-term memory the
+runtime can populate after each step and policies can read from
+without iterating the trace. capacity, latest(), n_recent(),
+filter_by_intent(), n_blocked(), n_errored(), JSON-safe.
+
+### Property combinators (ghostloop/properties/combinators.py)
+
+  AndProperty(children)  holds iff every child holds; concatenates
+                         violations with from-child tags
+  OrProperty(children)   holds iff any child holds
+  NotProperty(child)     inverts; useful for 'must violate' regression
+                         tests
+
+Severity defaults to max(children); explicit override available.
+
+### CLI: 2 new subcommands
+
+  python -m ghostloop eval --preset reach_8 [--with-geofence] [--out FILE]
+  python -m ghostloop diff <a.jsonl> <b.jsonl> [--json]
+
+eval runs any of the three catalogue presets through EpisodeRunner +
+summarize and emits a Markdown report (Wilson CI rendered). diff
+loads two trace files and renders the diff table directly.
+
+### Tests
+
+  test_v06_additions.py NEW — 37 tests:
+    ObservationBuffer            5
+    RetryPolicy                  5
+    Property combinators         5
+    TraceDiff                    4
+    LLMPlanner                   2
+    Fleet                        9
+    Dashboard (conditional)      3 (1 live-gated on fastapi install)
+    CLI: eval + diff             4
+
+  Suite: 145 -> 182 passing, 7 skipped (live-only) in 3.16s.
+
+### Pyproject
+
+  version 0.5.0 -> 0.6.0
+  optional-dependencies: + dashboard = fastapi + uvicorn[standard]
+
+### What ghostloop is now
+
+Six releases deep, ~7,000 LOC source + 3,000 LOC tests, 182 passing
+tests, six optional installs (mujoco / pybullet / mcp / otel / dashboard
+/ dev), three backends, three policy adapters (LLM / VLA / scripted),
+six policy gates (DenyList / RateLimit / Geofence / ForceCap / HITL /
+ObstacleAvoidance), four declarative properties + three combinators,
+six primitives, three planners (PickAndPlace / Traverse / LLM), seven
+CLI subcommands (info / demo / bench / replay / store / mcp / eval +
+diff). Multi-robot fleet ops + read-only HTTP dashboard ship with this
+release; what was a single-robot agent loop is now a fleet operations
+platform.
+
+---
+
 ## [0.5.0] — 2026-05-10 — VLAPolicy + properties engine + workspace + trajectories + planners
 
 Five additions that complete the policy / safety / planning surface:
