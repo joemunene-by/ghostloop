@@ -6,11 +6,13 @@ own actuator APIs; these mock versions exist so the runtime, policies, trace,
 and bench harness can be developed and tested without any sim install.
 """
 
+from .composite import composite_primitive
 from .motion import move_to, scan
 from .manipulation import pick, place
 from .trajectory import follow_trajectory, linear_interpolate
 
 __all__ = [
+    "composite_primitive",
     "move_to",
     "scan",
     "pick",

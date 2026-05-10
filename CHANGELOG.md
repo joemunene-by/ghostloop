@@ -1,5 +1,108 @@
 # Changelog
 
+## [0.7.0] — 2026-05-10 — Gymnasium + Cooldown + TimeWindow + SDF + Composite + Missions + Streaming
+
+Six additions that pull production infrastructure forward of the original
+roadmap. The package now sits one Backend short of being a serious
+RL/embodied-AI substrate (Gymnasium ecosystem unlocked), gains two
+ops-grade rate gates, ships a real signed-distance-field workspace,
+introduces composite primitives so policies can reason at a higher level,
+adds a Mission DAG runner with retry semantics, and exposes a live
+WebSocket stream of trace events for dashboards.
+
+### GymnasiumBackend (ghostloop/backends/gymnasium.py)
+
+Wraps any [Farama Gymnasium](https://gymnasium.farama.org) environment
+(or legacy `gym`) as a ghostloop Backend. Conditional import — the
+package itself doesn't depend on gymnasium; constructing a
+`GymnasiumBackend` raises `ImportError` with an install hint:
+
+  pip install ghostloop[gym]
+
+That single bridge brings hundreds of envs into the ghostloop runtime:
+classic control, MuJoCo locomotion, FetchReach / Push, Atari,
+pybullet-gym ports, every research env that publishes a Gym-style
+`step(action)` contract. Every safety gate, bench harness, MissionRunner,
+and trace replay we ship now works against that ecosystem out of the
+box. Two primitives bind to the backend: `apply_action()` (raw action
+vector — what VLAPolicy and scripted RL controllers emit) and
+`reset_env()` (multi-episode benches).
+
+### CooldownGate + TimeWindowGate (ghostloop/policies/{cooldown,time_window}.py)
+
+Two ops-grade rate gates that turned out to be the most-asked-for
+extensions to the v0.4 RateLimitGate.
+
+  CooldownGate     enforces a minimum interval between successive calls
+                   of the same primitive (per-primitive overrides on top
+                   of a default). Implemented with `time.monotonic()` so
+                   it survives wall-clock shenanigans. Useful for hardware
+                   that needs a settling period after each motion, or for
+                   any primitive whose cost dominates throughput planning.
+
+  TimeWindowGate   gate primitives by time-of-day. Common ops constraint
+                   (warehouse robot 06:00-22:00, lab arm 09:00-18:00,
+                   farm robot sunrise-to-sunset). Windows can cross
+                   midnight for night-shift ops. ``now`` is injected as a
+                   callable so tests can drive synthetic clocks.
+
+### Convex polytope + half-space SDF (ghostloop/policies/sdf.py)
+
+The v0.5 WorkspaceModel handles axis-aligned boxes + spheres; this
+release adds half-spaces (floor / ceiling / wall), convex polytopes
+(intersection of half-spaces — the right shape for a robot body acting
+as an obstacle to its fleet siblings), and a `signed_distance(p, ws)`
+function that returns the negative-inside / positive-outside metric
+across the whole workspace. Stdlib math; no numpy. Inigo Quilez's box
+SDF formula. Pairs cleanly with future proximity-based slow-down
+policies.
+
+### Composite primitives (ghostloop/primitives/composite.py)
+
+Real robots have macros: `approach_grasp = (move_to_pre_grasp,
+descend_to_grasp_pose, close_gripper, lift)`. Defining each macro as a
+single `Primitive` keeps the registry small and lets policies (and LLM
+tool cards) reason at the right level of abstraction. The
+`composite_primitive(name, steps, ...)` factory sequences existing
+primitives behind one name; sub-primitive observations are preserved
+under `substep_<i>_<name>` keys; first non-OK substep stops the chain.
+
+### Mission orchestrator (ghostloop/missions/)
+
+DAG of Steps with dependencies, Kahn's-algorithm cycle detection, retry
+semantics, required-vs-optional steps, KeyError-safe aggregation. The
+`MissionRunner` runs the DAG against any `Runtime` (so the same safety
+pipeline applies to multi-step missions); a `MissionResult` aggregates
+per-step status (`SUCCEEDED / FAILED / SKIPPED`) and the overall mission
+status (`SUCCEEDED / PARTIAL / FAILED`). Failed required steps propagate
+to dependents as `SKIPPED`; failed optional steps are tolerated and
+their dependents still run.
+
+### WebSocket trace streaming (ghostloop/dashboard/streaming.py)
+
+The v0.6 dashboard exposes the SQLite store as JSON; this adds the live
+side. `StreamManager` is a sync-publish / async-subscribe fan-out with a
+bounded ring buffer per robot (so a newly-connected client gets a small
+replay instead of a blank screen). `attach_streaming(app, manager)`
+registers `/ws/v1/stream` on a FastAPI app. Robot runtimes call
+`manager.publish(robot_name, event)` synchronously; the publish path is
+non-blocking (saturated subscribers drop the event rather than slowing
+the publisher).
+
+### Tests
+
+29 new tests in `tests/test_v07_additions.py` across all six surfaces:
+
+  TestGymnasiumConditional   2  ImportError + apply_action/reset_env primitives
+  TestCooldownGate           4  default + per-primitive + non-blocking + reset
+  TestTimeWindowGate         5  inside / outside / midnight / pass-through / unconfigured
+  TestSDF                    5  bounds clearance, sphere SDF (in+out), half-space, polytope
+  TestCompositePrimitive     2  sequential dispatch + first-failure-stops-chain
+  TestMission                8  DAG topology, cycle detection, retry, optional skip
+  TestStreamManager          3  publish/subscribe, history replay, drop-on-saturation
+
+  Total package: 211 passed, 7 live-gated.
+
 ## [0.6.0] — 2026-05-10 — Fleet + Dashboard + LLMPlanner + Retry + Diff + Observations + Combinators
 
 Eight additions across the production-ops surface. Multi-robot becomes

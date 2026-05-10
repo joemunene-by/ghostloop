@@ -8,8 +8,8 @@ A tool-using agent runtime, fail-closed safety pipeline, statistically-rigorous 
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Status](https://img.shields.io/badge/status-v0.6.0%20%E2%80%94%20fleet%20%2B%20dashboard%20%2B%20LLMPlanner%20%2B%20retry%20%2B%20diff%20%2B%20observations-14B8A6.svg)](#)
-[![Tests](https://img.shields.io/badge/tests-182%20passed%2C%207%20live--gated-14B8A6.svg)](#)
+[![Status](https://img.shields.io/badge/status-v0.7.0%20%E2%80%94%20gymnasium%20%2B%20cooldown%20%2B%20time--window%20%2B%20SDF%20%2B%20composite%20%2B%20missions%20%2B%20streaming-14B8A6.svg)](#)
+[![Tests](https://img.shields.io/badge/tests-211%20passed%2C%207%20live--gated-14B8A6.svg)](#)
 
 </div>
 
@@ -183,14 +183,15 @@ Models from the [MuJoCo Menagerie](https://github.com/google-deepmind/mujoco_men
 | Version | Focus |
 |---|---|
 | v0.1.0 | Core abstractions, MockBackend, three policy gates, runnable demo, 23 tests |
-| **v0.2.0 (now)** | **MuJoCoBackend**, **LLMPolicy adapter**, **bench harness with Wilson CIs + McNemar + Cohen's h**, paired-comparison demo, 64 tests |
-| v0.3 | `PyBulletBackend` for users without MuJoCo. Episode catalogue: pick-place, sort, stack, navigate. Trace replay tooling. |
-| v0.4 | Two more gates: `ForceCapGate` (deny torque > N), `HumanInTheLoopGate` (block until external review approves). |
-| v0.5 | `VLABackend` adapter: OpenVLA / π0 / RT-2 emit primitives directly; ghostloop adds the safety + trace + bench layer they're missing. |
-| v0.6 | Vision pipeline: camera primitives, RGB-D fusion, simple object detection bound to backend snapshots. |
-| v0.7 | `ROS2Backend` for real-hardware deployments via DDS. |
-| v0.8 | MCP server: every primitive becomes a callable MCP tool, so Claude Desktop / Cursor / any MCP client can drive the robot through the safety pipeline. |
-| v1.0 | Production deployment story, fleet management dashboard (Next.js + tRPC), end-to-end VLA-on-MuJoCo benchmarks reproducing OpenVLA / π0 numbers under our trace + safety regime. |
+| v0.2.0 | MuJoCoBackend, LLMPolicy adapter, bench harness with Wilson CIs + McNemar + Cohen's h, paired-comparison demo, 64 tests |
+| v0.3.0 | PyBulletBackend, async runtime, declarative properties engine, MCP server, scripted policies, 89 tests |
+| v0.4.0 | ForceCap + HumanInTheLoop gates, episode catalogue, MuJoCo Menagerie auto-clone, replay/diff CLI, 110 tests |
+| v0.5.0 | VLAPolicy adapter, sensor primitives + cameras, OpenTelemetry hooks, SQLite persistence, planner DSL, 142 tests |
+| v0.6.0 | Fleet abstraction, FastAPI dashboard, LLMPlanner, RetryGate, observation buffer, property combinators, 182 tests |
+| **v0.7.0 (now)** | **GymnasiumBackend**, **CooldownGate + TimeWindowGate**, **convex polytope SDF**, **composite primitives**, **Mission DAG runner**, **WebSocket trace streaming**, 211 tests |
+| v0.8 | `ROS2Backend` for real-hardware deployments via DDS. |
+| v0.9 | Sim2Real bridge + multi-modal perception (RGB-D fusion + simple object detection bound to backend snapshots). |
+| v1.0 | End-to-end VLA-on-MuJoCo benchmarks reproducing OpenVLA / π0 numbers under our trace + safety regime; fleet dashboard productionised. |
 
 ## Repository layout
 

@@ -5,6 +5,7 @@ Each gate is small and composable. Pipeline order matters: cheap gates first
 run when the cheap checks pass. All gates here are fail-closed by design.
 """
 
+from .cooldown import CooldownGate
 from .deny_list import DenyListGate
 from .force_cap import ForceCapGate
 from .geofence import GeofenceGate
@@ -17,6 +18,7 @@ from .human_in_the_loop import (
 from .llm import LLMPolicy, LLMPolicyConfig, LLMPolicyError, llm_policy_loop
 from .rate_limit import RateLimitGate
 from .retry import RetryPolicy, is_any_error, is_transient_error
+from .time_window import TimeWindowGate, Window
 from .vla import (
     ActionDecoder,
     DeltaXYZDecoder,
@@ -57,4 +59,8 @@ __all__ = [
     "RetryPolicy",
     "is_any_error",
     "is_transient_error",
+    # Cooldown + time window
+    "CooldownGate",
+    "TimeWindowGate",
+    "Window",
 ]

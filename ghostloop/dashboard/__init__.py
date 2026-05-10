@@ -24,5 +24,11 @@ Lambda / etc.
 """
 
 from .api import create_dashboard_app, dashboard_available
+from .streaming import StreamManager, attach_streaming
 
-__all__ = ["create_dashboard_app", "dashboard_available"]
+__all__ = [
+    "create_dashboard_app",
+    "dashboard_available",
+    "StreamManager",
+    "attach_streaming",
+]

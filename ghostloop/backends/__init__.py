@@ -9,6 +9,7 @@ time, never at package import:
   pip install ghostloop[ros2]     # ROS2Backend (planned v0.7)
 """
 
+from .gymnasium import GymnasiumBackend, gymnasium_available
 from .menagerie import (
     KNOWN_MODELS,
     MenagerieError,
@@ -20,8 +21,10 @@ from .mujoco import MuJoCoBackend, mujoco_available
 from .pybullet import PyBulletBackend, pybullet_available
 
 __all__ = [
+    "GymnasiumBackend",
     "MuJoCoBackend",
     "PyBulletBackend",
+    "gymnasium_available",
     "mujoco_available",
     "pybullet_available",
     "MenagerieError",
