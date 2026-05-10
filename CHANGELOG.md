@@ -1,5 +1,84 @@
 # Changelog
 
+## [1.0.2] — 2026-05-10 — Distillation + Deadline Scheduler + Live Intervention + Calibration
+
+Four new pillars that extend the moat past the original v1.0 roadmap.
+
+### Distillation pipeline (ghostloop/training/distillation.py)
+
+Teacher-student distillation for embodied policies. A teacher (LLM-driven
+loop or slow VLA) generates rollouts under the safety pipeline; a
+student trains on the resulting (state, intent) pairs to imitate the
+teacher faster + cheaper.
+
+  - `DistillationDataset` — collects samples from Trace OR Rollout
+    objects. Filters denied / errored events by default; flags to
+    include them when teaching the student to anticipate denials.
+  - `StudentPolicy` Protocol — same shape as the safe-RL PolicyAdapter.
+    PyTorch / JAX / scripted nearest-neighbour all plug in.
+  - `DistillationTrainer` — outer loop with epochs / batch_size /
+    held-out validation accuracy. Held-out accuracy = predicted intent
+    name matches teacher's.
+  - JSONL serialisation so distillation datasets can be checkpointed,
+    versioned, shared.
+
+### Deadline scheduler (ghostloop/realtime.py)
+
+Real-time control loops have hard timing requirements; the v0.3
+AsyncRuntime had rate-Hz pacing but no detection of missed deadlines.
+
+  - `DeadlineMonitor(target_hz, overrun_threshold)` — observes step
+    timestamps, fires `DeadlineMissed` events when the period exceeds
+    `target_period * overrun_threshold`. Tracks rolling jitter.
+  - `DeadlineGate(monitor, max_consecutive)` — PolicyGate that DENIES
+    new intents after N consecutive misses. Drop into the pipeline to
+    auto-fallback to safe behaviour when timing degrades.
+  - `on_miss` callback hooks into AlarmRegistry for production paging.
+
+### Live policy intervention (ghostloop/intervention.py)
+
+Pause / resume / hot-swap the active policy without restarting the
+process. Critical for production robots where a process restart is
+the wrong recovery path.
+
+  - `LivePolicyController(policy, fallback_policy)` — wraps any policy
+    callable with thread-safe pause / resume / swap_to / emergency_stop.
+  - PAUSED state honours an optional fallback (e.g. emit `stop` for a
+    mobile base) so the runtime keeps issuing safe-fallback intents.
+  - EMERGENCY_STOP latches a sticky intent; only resume() leaves.
+  - Audit history of every transition: timestamp + operator + reason.
+  - `InterventionGate` — PolicyGate that denies dispatch while PAUSED;
+    permits stop / land / lie_down / emit_event during EMERGENCY_STOP.
+
+### Calibration / system identification (ghostloop/calibration.py)
+
+Auto-tune RobotProfile caps from real robot captures.
+
+  - `calibration_episode(runtime, sweep)` — drives a calibration
+    sweep, captures every (intent, state_before, state_after) tuple.
+  - `analyse_capture(log) -> CalibrationReport` — empirical workspace
+    AABB, p99 + max velocity / acceleration / force, per-primitive
+    call latency, primitive distribution, warnings.
+  - `report.recommended_profile()` — returns a tuned `RobotProfile`
+    with conservative margins on the empirical bounds. Drop into
+    runtime construction without writing the profile by hand.
+
+### MCP server entry point (ghostloop/mcp_server.py)
+
+Added `_cli_main()` so `python -m ghostloop.mcp_server` boots the
+server with profile / backend / transport from env vars. Required by
+Smithery.ai's manifest format.
+
+### Smithery manifest (smithery.yaml)
+
+Repo-root manifest for Smithery.ai listing. Documents stdio + http
+transports, profile presets, install hint, tag list.
+
+### Tests
+
+26 new tests across distillation / deadline / intervention /
+calibration. Total: **359 passed**, 8 live-gated.
+
 ## [1.0.1] — 2026-05-10 — First PyPI release + automated workflows
 
 First release published via GitHub Actions OIDC trusted publishing. No

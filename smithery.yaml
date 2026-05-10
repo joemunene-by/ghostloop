@@ -1,0 +1,78 @@
+name: ghostloop
+displayName: ghostloop — robot agent runtime
+description: |
+  Drive any robot from any MCP-aware assistant (Claude Desktop, Cursor,
+  Continue, Cline, Zed, Gemini CLI). Tool-using runtime, fail-closed
+  safety pipeline (geofence + force cap + action smoothing + rate limit
+  + cooldown + time window + HITL), six backends (Mock / MuJoCo /
+  PyBullet / Gymnasium / ROS 2 / Randomized), and post-hoc analysis
+  (counterfactual replay, causal attribution, LLM-as-judge, property
+  mining). Pick from preset profiles for arms / mobile bases / quadrupeds
+  / drones / humanoids / mobile-arms, or describe your own robot in YAML.
+
+homepage: https://github.com/joemunene-by/ghostloop
+license: MIT
+author: Joe Munene
+tags:
+  - robotics
+  - embodied-ai
+  - agent
+  - safety
+  - mcp
+  - mujoco
+  - ros2
+  - vla
+  - gymnasium
+  - sim2real
+
+# stdio transport for desktop clients (default).
+stdio:
+  command: python
+  args:
+    - "-m"
+    - "ghostloop.mcp_server"
+  env:
+    GHOSTLOOP_PROFILE: "franka_arm"
+    GHOSTLOOP_BACKEND: "mock"
+    GHOSTLOOP_TRANSPORT: "stdio"
+
+# HTTP transport for remote / mobile MCP clients.
+# Replace {your-deployment-url} with the URL where you host the server.
+http:
+  url: "{your-deployment-url}/mcp"
+
+# Tool surface exposed to the assistant. Auto-discovered from the
+# RobotProfile at boot — these are example names from the franka_arm
+# preset.
+tools:
+  - name: list_primitives
+    description: List every robot action this server can perform.
+  - name: step
+    description: Run one robot action through the safety pipeline.
+  - name: state
+    description: Read the current robot state (pose, joints, sensors).
+  - name: recent_trace
+    description: Return the last N events from the active trace.
+
+# Available preset profiles. Set GHOSTLOOP_PROFILE to one of these to
+# control a different robot, or point it at a custom YAML profile path.
+profiles:
+  - franka_arm
+  - turtlebot
+  - spot
+  - tello
+  - stretch
+  - humanoid_demo
+
+# Install hint shown in Smithery UI before the user adds the server.
+install:
+  pip: "ghostloop[mcp]"
+  notes: |
+    For sim physics: `pip install ghostloop[mujoco,mcp]`. For real
+    hardware via ROS 2: install ROS 2 separately + use
+    GHOSTLOOP_BACKEND=ros2. See https://github.com/joemunene-by/ghostloop
+    for the full setup guide.
+
+# Useful for the Smithery card view.
+icon: "https://raw.githubusercontent.com/joemunene-by/ghostloop/main/assets/ghostloop_mark.png"
+documentation: https://github.com/joemunene-by/ghostloop#setup

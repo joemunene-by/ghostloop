@@ -34,6 +34,13 @@ Designed so a new robot is two files: a ``Backend`` and a registry of
 """
 
 from .async_runtime import AsyncPolicyGate, AsyncPolicyPipeline, AsyncRuntime
+from .calibration import (
+    CalibrationCapture,
+    CalibrationCaptureLog,
+    CalibrationReport,
+    analyse_capture,
+    calibration_episode,
+)
 from .core import (
     Backend,
     Decision,
@@ -48,20 +55,37 @@ from .core import (
     Trace,
     TraceEvent,
 )
+from .intervention import (
+    InterventionEvent,
+    InterventionGate,
+    InterventionState,
+    LivePolicyController,
+)
 from .observations import ObservationBuffer, ObservationRecord
+from .realtime import DeadlineGate, DeadlineMissed, DeadlineMonitor
 from .store import EpisodeRow, GhostloopStore, RunRow
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 
 __all__ = [
     "AsyncPolicyGate",
     "AsyncPolicyPipeline",
     "AsyncRuntime",
     "Backend",
+    "CalibrationCapture",
+    "CalibrationCaptureLog",
+    "CalibrationReport",
+    "DeadlineGate",
+    "DeadlineMissed",
+    "DeadlineMonitor",
     "Decision",
     "EpisodeRow",
     "GhostloopStore",
     "Intent",
+    "InterventionEvent",
+    "InterventionGate",
+    "InterventionState",
+    "LivePolicyController",
     "MockBackend",
     "ObservationBuffer",
     "ObservationRecord",
@@ -74,5 +98,7 @@ __all__ = [
     "Runtime",
     "Trace",
     "TraceEvent",
+    "analyse_capture",
+    "calibration_episode",
     "__version__",
 ]

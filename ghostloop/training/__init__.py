@@ -29,6 +29,13 @@ from .core import (
     Transition,
     train_safe,
 )
+from .distillation import (
+    DistillationDataset,
+    DistillationSample,
+    DistillationTrainer,
+    StudentPolicy,
+    collect_dataset,
+)
 from .hindsight import (
     HindsightStrategy,
     hindsight_relabel,
@@ -46,4 +53,9 @@ __all__ = [
     "HindsightStrategy",
     "hindsight_relabel",
     "sparse_indicator_reward",
+    "DistillationDataset",
+    "DistillationSample",
+    "DistillationTrainer",
+    "StudentPolicy",
+    "collect_dataset",
 ]

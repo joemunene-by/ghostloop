@@ -6,10 +6,16 @@
 
 A tool-using agent runtime, fail-closed safety pipeline, statistically-rigorous bench harness, and sim-first execution layer for embodied AI. Sister project to [GhostLM](https://github.com/joemunene-by/GhostLM).
 
+**Now live:** [`pip install ghostloop`](https://pypi.org/project/ghostloop/) · [interactive demo](https://huggingface.co/spaces/Ghostgim/ghostloop-demo) · 11 releases · 333 tests · MIT.
+
+[![PyPI](https://img.shields.io/pypi/v/ghostloop?color=14B8A6&label=pypi)](https://pypi.org/project/ghostloop/)
+[![Downloads](https://static.pepy.tech/badge/ghostloop/month)](https://pepy.tech/project/ghostloop)
+[![HF Space](https://img.shields.io/badge/🤗%20live%20demo-Ghostgim%2Fghostloop--demo-FFD21E)](https://huggingface.co/spaces/Ghostgim/ghostloop-demo)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Status](https://img.shields.io/badge/status-v1.0.0%20%E2%80%94%20production-14B8A6.svg)](#)
-[![Tests](https://img.shields.io/badge/tests-314%20passed%2C%208%20live--gated-14B8A6.svg)](#)
+[![Status](https://img.shields.io/badge/status-v1.0.2%20%E2%80%94%20production-14B8A6.svg)](#)
+[![Tests](https://img.shields.io/badge/tests-359%20passed%2C%208%20live--gated-14B8A6.svg)](#)
+[![CI](https://github.com/joemunene-by/ghostloop/actions/workflows/ci.yml/badge.svg)](https://github.com/joemunene-by/ghostloop/actions/workflows/ci.yml)
 
 </div>
 

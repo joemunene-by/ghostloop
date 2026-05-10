@@ -205,3 +205,72 @@ def run_mcp_server(
         server.run(transport=transport, mount_path=mount_path)
     else:
         server.run(transport=transport)
+
+
+def _cli_main() -> None:
+    """``python -m ghostloop.mcp_server`` entry point.
+
+    Picks profile / backend / transport from env vars (same scheme as
+    examples/mcp_robot.py). Exists so package installers — and Smithery
+    in particular — can launch the server with one command line:
+
+        python -m ghostloop.mcp_server
+
+    Without writing the example script.
+    """
+    import os
+    import sys
+    from .profiles import (
+        build_runtime_from_profile,
+        franka_arm,
+        humanoid_demo,
+        load_profile_yaml,
+        spot_quadruped,
+        stretch_mobile_arm,
+        tello_drone,
+        turtlebot_base,
+    )
+    from pathlib import Path
+    presets = {
+        "franka_arm":     franka_arm,
+        "turtlebot":      turtlebot_base,
+        "spot":           spot_quadruped,
+        "tello":          tello_drone,
+        "stretch":        stretch_mobile_arm,
+        "humanoid_demo":  humanoid_demo,
+    }
+    spec = os.environ.get("GHOSTLOOP_PROFILE", "franka_arm")
+    if spec in presets:
+        profile = presets[spec]()
+    elif Path(spec).exists():
+        profile = load_profile_yaml(spec)
+    else:
+        sys.stderr.write(
+            f"GHOSTLOOP_PROFILE={spec!r} is not a built-in preset and not "
+            f"a YAML path. Built-ins: {sorted(presets)}\n"
+        )
+        sys.exit(2)
+    if backend := os.environ.get("GHOSTLOOP_BACKEND"):
+        profile.backend_kind = backend
+    runtime = build_runtime_from_profile(profile)
+    transport = os.environ.get("GHOSTLOOP_TRANSPORT", "stdio").lower()
+    host = os.environ.get("GHOSTLOOP_HOST", "127.0.0.1")
+    port = int(os.environ.get("GHOSTLOOP_PORT", "8765"))
+    instructions = profile.instructions
+    extra = os.environ.get("GHOSTLOOP_INSTRUCTIONS", "").strip()
+    if extra:
+        instructions = (instructions + "\n\n" + extra).strip()
+    sys.stderr.write(
+        f"[ghostloop] starting MCP server "
+        f"(profile={profile.name} backend={runtime.backend.name} "
+        f"transport={transport})\n"
+    )
+    run_mcp_server(
+        runtime, server_name=f"ghostloop-{profile.name}",
+        transport=transport, host=host, port=port,
+        instructions=instructions or None,
+    )
+
+
+if __name__ == "__main__":
+    _cli_main()
