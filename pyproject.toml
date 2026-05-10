@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ghostloop"
+version = "0.1.0"
+description = "The agent loop, embodied. A tool-using runtime + fail-closed safety pipeline + sim-first execution harness for embodied AI."
+readme = "README.md"
+license = "MIT"
+authors = [{name = "Joe Munene"}]
+requires-python = ">=3.10"
+keywords = [
+    "robotics", "agent", "embodied-ai", "vla", "tool-use",
+    "policy-gates", "safety", "mujoco", "ros2", "mcp",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: System :: Hardware",
+]
+
+# v0.1.0 has zero runtime dependencies. Backends pull their own:
+#   pip install ghostloop[mujoco]   # v0.2
+#   pip install ghostloop[pybullet] # v0.3
+#   pip install ghostloop[ros2]     # v0.7
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.urls]
+Homepage = "https://github.com/joemunene-by/ghostloop"
+Repository = "https://github.com/joemunene-by/ghostloop"
+"Sister Project — GhostLM" = "https://github.com/joemunene-by/GhostLM"
+
+[tool.setuptools.packages.find]
+include = ["ghostloop*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
