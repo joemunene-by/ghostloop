@@ -1,0 +1,96 @@
+# Sample RobotProfile YAML — a hospital-medication-delivery robot.
+#
+# Load with:
+#   GHOSTLOOP_PROFILE=examples/custom_robot.yaml python3 examples/mcp_robot.py --selfcheck
+#
+# Schema reference: ghostloop/profiles/core.py :: RobotProfile + load_profile_yaml.
+# Requires PyYAML at runtime: pip install PyYAML.
+
+name: medbot_floor3
+morphology: mobile_arm
+
+# Pull standard primitives from the cross-morphology library.
+categories:
+  - mobile_base       # drive, stop, goto, rotate
+  - dexterous         # set_joint, set_gripper
+  - sensing           # sense, scan_360, take_photo, read_battery
+  - generic           # wait, emit_event
+
+# Tell the LLM what THIS robot is. The MCP server wires this into the
+# system prompt every conversation starts with.
+instructions: |
+  You are controlling MedBot, a hospital floor-3 medication-delivery robot.
+
+  Capabilities:
+    - Wheeled mobile base with goto / drive / stop.
+    - Telescoping arm with a small gripper; use set_joint and set_gripper.
+    - Tray on top of the base (primitive: dispense_pill — see below).
+
+  Hard rules:
+    - NEVER drive faster than 0.4 m/s; this floor has elevated risk
+      (patients, IV poles, wandering visitors).
+    - ALWAYS stop before extending the arm.
+    - ALWAYS read_battery before goto if battery is unknown.
+    - If a person is detected within 0.6m, stop and wait 5 seconds.
+
+  Workspace is the floor-3 ward, NOT the elevators or stairs.
+
+# Workspace box: ((xmin, ymin, zmin), (xmax, ymax, zmax)) in metres.
+# GeofenceGate uses these to deny any move target that lands outside.
+workspace_bounds:
+  - [-15.0, -15.0, 0.0]
+  - [15.0, 15.0, 1.6]
+
+# Caps. Translates to ForceCapGate + ActionSmoothingGate config.
+max_force_n: 8.0
+max_velocity: 0.4
+max_acceleration: 0.6
+
+# Throttling.
+rate_limit_per_min: 60
+cooldown_s: 0.1
+per_primitive_cooldown:
+  goto: 0.5            # don't re-plan more than twice a second
+  set_gripper: 1.0     # avoid grip chatter
+
+# Outright deny these — ghostloop will reject them at the gate.
+denied_primitives:
+  - takeoff            # not an aerial robot
+  - fly_to
+  - hover
+  - sit                # not a quadruped
+
+# Require human approval for these primitives.
+hitl_primitives:
+  - set_gripper
+  - dispense_pill
+
+# Custom primitives: pluggable Python modules with factory functions.
+# Each entry must be ``module:factory`` and the factory must return a
+# Primitive instance. See examples/custom_robot_primitives.py.
+custom_primitives:
+  - module: examples.custom_robot_primitives
+    factory: dispense_pill
+  - module: examples.custom_robot_primitives
+    factory: alert_nurse
+
+# Composite primitives: macros built on top of existing primitives.
+composites:
+  - name: deliver_room
+    steps: [goto, take_photo, dispense_pill, alert_nurse]
+    description: Drive to a room, document the visit, dispense, alert.
+
+# Extra safety gates. ``kind`` matches the dispatcher in
+# ghostloop/profiles/core.py :: _BUILTIN_GATES.
+safety_gates:
+  - kind: cooldown
+    args:
+      default_s: 0.1
+      per_primitive:
+        dispense_pill: 5.0  # 5s minimum between dispenses
+
+# Pick the backend. For sim demos use mock; for real hardware use ros2.
+backend:
+  kind: mock
+  kwargs:
+    name: medbot_mock

@@ -153,23 +153,43 @@ PYTHONPATH=. python3 -m pytest tests/
 
 No dependencies beyond Python 3.10+. This proves the runtime, the safety pipeline, the bench harness, and the trace recorder — exactly the same code you'll point at a real arm later.
 
-### 2. Drive a robot from any chat client over MCP (10 minutes)
+### 2. Drive *any* robot from any chat client over MCP (10 minutes)
 
-ghostloop ships a single MCP server (`examples/claude_desktop_mcp_arm.py`) that works with **every MCP-aware client** — the protocol is universal, so the same server speaks to Claude Desktop, Cursor, Continue, Cline, Zed, Gemini CLI, and any future client. Two transports, picked via `GHOSTLOOP_TRANSPORT`:
+ghostloop ships a single MCP server (`examples/mcp_robot.py`) that works with **every MCP-aware client** — the protocol is universal, so the same server speaks to Claude Desktop, Cursor, Continue, Cline, Zed, Gemini CLI, and any future client. Pick what you control via `GHOSTLOOP_PROFILE`:
+
+| Profile | Robot | Primitives exposed |
+|---|---|---|
+| `franka_arm` (default) | Franka Panda 7-DOF arm | `set_joint`, `set_gripper`, `sense`, `take_photo`, … |
+| `turtlebot` | TurtleBot mobile base | `drive`, `stop`, `goto`, `rotate`, … |
+| `spot` | Boston Dynamics Spot quadruped | `walk_to`, `sit`, `stand`, `lie_down`, … |
+| `tello` | DJI Tello / quadcopter | `takeoff`, `land`, `fly_to`, `hover`, … |
+| `stretch` | Hello Robot Stretch RE3 (mobile arm) | `drive`, `set_joint`, `set_gripper`, … |
+| `humanoid_demo` | Stationary humanoid | `wave`, `look_at`, `point_at`, `nod` |
+| `<path/to/your.yaml>` | **Your robot** | whatever you declare |
+
+Each preset bundles morphology-appropriate primitives, conservative workspace + force + velocity caps, HITL on the dangerous primitives, and a robot-specific instructions block the LLM gets as a system prompt. See `examples/custom_robot.yaml` for the YAML schema and `examples/custom_robot_primitives.py` for how to plug in your own actions (`dispense_pill`, `alert_nurse`, whatever your hardware does) without forking ghostloop.
+
+Two transports, picked via `GHOSTLOOP_TRANSPORT`:
 
 | Transport | When to use | Clients |
 |---|---|---|
 | `stdio` (default) | desktop, same machine | Claude Desktop, Cursor, Continue, Cline, Zed, Gemini CLI |
 | `streamable-http` | remote, mobile, browser, kiosk | any client supporting remote MCP servers |
 
-**Step 1.** Verify the example boots (any OS):
+**Step 1.** Verify the example boots (any OS, any profile):
 
 ```bash
-python3 examples/claude_desktop_mcp_arm.py --selfcheck
-# [ghostloop] backend=mock_arm
-# [ghostloop] primitives=['move_to', 'pick', 'place', 'scan']
-# [ghostloop] gates=['RateLimitGate', 'GeofenceGate', 'ForceCapGate', 'ActionSmoothingGate', 'HumanInTheLoopGate']
-# [ghostloop] selfcheck step status=ok ...
+# Default (Franka arm)
+python3 examples/mcp_robot.py --selfcheck
+
+# Quadruped
+GHOSTLOOP_PROFILE=spot python3 examples/mcp_robot.py --selfcheck
+
+# Drone
+GHOSTLOOP_PROFILE=tello python3 examples/mcp_robot.py --selfcheck
+
+# Custom YAML
+GHOSTLOOP_PROFILE=examples/custom_robot.yaml python3 examples/mcp_robot.py --selfcheck
 ```
 
 **Step 2.** Install the MCP transport package:
@@ -189,15 +209,20 @@ pip install ghostloop[mcp]      # or: pip install mcp
 | Zed | `~/.config/zed/settings.json` (under `context_servers`) | same | same |
 | Gemini CLI | `~/.gemini/settings.json` (under `mcpServers`) | same | same |
 
-Paste this block into the config file (replace the absolute path):
+Paste this block into the config file (replace the absolute path; pick a profile that matches your robot):
 
 ```jsonc
 {
   "mcpServers": {
     "ghostloop": {
       "command": "python3",
-      "args": ["/absolute/path/to/ghostloop/examples/claude_desktop_mcp_arm.py"],
-      "env": { "GHOSTLOOP_BACKEND": "mock", "GHOSTLOOP_TRANSPORT": "stdio" }
+      "args": ["/absolute/path/to/ghostloop/examples/mcp_robot.py"],
+      "env": {
+        "GHOSTLOOP_PROFILE": "franka_arm",
+        "GHOSTLOOP_BACKEND": "mock",
+        "GHOSTLOOP_TRANSPORT": "stdio",
+        "GHOSTLOOP_INSTRUCTIONS": "Optional: extra robot-specific guidance appended to the profile's instructions block."
+      }
     }
   }
 }
@@ -231,7 +256,59 @@ Paste this block into the config file (replace the absolute path):
 
 Prerequisites: ROS 2 (`apt install ros-humble-desktop` on Ubuntu, the [Robotology Mac install](https://github.com/RoboStack/ros-humble) on macOS, [WSL2 + Ubuntu](https://docs.ros.org/en/humble/Installation/Alternatives/Ubuntu-Install-Binary.html) on Windows), your arm's ROS 2 driver running, and `source /opt/ros/humble/setup.bash` (or `setup.zsh` / `setup.ps1`) in the same shell that launches the client so the subprocess inherits `$AMENT_PREFIX_PATH`.
 
-> ⚠ **Before pointing this at a real arm:** open `examples/claude_desktop_mcp_arm.py` and tune `WORKSPACE_MIN` / `WORKSPACE_MAX` / `MAX_FORCE_N` / `MAX_VELOCITY_MS` to match your arm's reach + payload + safe operating envelope. Keep `HITL_OPERATIONS = ["pick", "place"]` on for the first dozen episodes — every grasp will prompt your terminal for approval. Read the trace logs, build trust, then relax HITL.
+> ⚠ **Before pointing this at a real robot:** edit your profile (or copy a preset to YAML and tweak it) — set `workspace_bounds` / `max_force_n` / `max_velocity` / `max_acceleration` to your hardware's safe envelope, list dangerous primitives under `hitl_primitives` so the operator approves each call interactively, and write robot-specific guidance into the `instructions:` block (e.g. *"never reach behind the base"*, *"battery below 20% triggers automatic land"*). Read the trace logs for the first dozen episodes; relax HITL only after you trust the model's behaviour.
+
+#### Define your own robot
+
+Two ways to add a robot ghostloop doesn't already know about:
+
+**A. YAML profile** (no Python required) — copy `examples/custom_robot.yaml`, edit it, and point `GHOSTLOOP_PROFILE` at the path. The schema covers categories of standard primitives, your own custom primitives, composite macros, instructions for the LLM, workspace + force + velocity caps, denied / HITL operations, and the backend kind. The shipped sample defines a hospital medication-delivery robot — mobile base + arm, with custom `dispense_pill` and `alert_nurse` primitives and a `deliver_room` macro composed from existing primitives:
+
+```yaml
+name: medbot_floor3
+morphology: mobile_arm
+categories: [mobile_base, dexterous, sensing, generic]
+instructions: |
+  You are MedBot, hospital floor-3 medication delivery. NEVER drive faster
+  than 0.4 m/s. ALWAYS stop before extending the arm. ...
+workspace_bounds: [[-15, -15, 0], [15, 15, 1.6]]
+max_velocity: 0.4
+hitl_primitives: [set_gripper, dispense_pill]
+custom_primitives:
+  - module: examples.custom_robot_primitives
+    factory: dispense_pill
+  - module: examples.custom_robot_primitives
+    factory: alert_nurse
+composites:
+  - name: deliver_room
+    steps: [goto, take_photo, dispense_pill, alert_nurse]
+backend:
+  kind: ros2
+  kwargs: { node_name: medbot, cmd_vel_topic: /medbot/cmd_vel }
+```
+
+**B. Code** — build a `RobotProfile` programmatically. Useful when your robot needs runtime state (a calibration matrix, a credential, dynamically-resolved topic names) that doesn't fit YAML:
+
+```python
+from ghostloop.profiles import RobotProfile, build_runtime_from_profile
+from ghostloop.primitives import drive, set_gripper
+from my_robot.primitives import dispense_pill, alert_nurse
+
+profile = RobotProfile(
+    name="medbot",
+    morphology="mobile_arm",
+    primitives=[drive(), set_gripper(), dispense_pill(), alert_nurse()],
+    instructions="You are MedBot...",
+    workspace_bounds=((-15, -15, 0), (15, 15, 1.6)),
+    max_velocity=0.4,
+    hitl_primitives=["dispense_pill"],
+    backend_kind="ros2",
+    backend_kwargs={"node_name": "medbot", "cmd_vel_topic": "/medbot/cmd_vel"},
+)
+runtime = build_runtime_from_profile(profile)
+```
+
+Custom Primitive factories follow a stable contract: a function returning `Primitive(name, call, description, arg_schema)`. The `call` body talks to your hardware however you need it to — ROS 2 publisher, vendor SDK, raw serial, REST endpoint. See `examples/custom_robot_primitives.py` for two worked examples (`dispense_pill`, `alert_nurse`).
 
 ### 3. Mobile + remote MCP (HTTP transport)
 
@@ -503,6 +580,14 @@ ghostloop/
     trajectory.py            follow_trajectory + linear_interpolate
     composite.py             composite_primitive factory                     (v0.7)
     morphology.py            MorphologyRegistry — cross-embodiment           (v0.10)
+    library.py               cross-morphology primitive catalogue —          (v1.0)
+                             mobile_base / quadruped / humanoid / aerial /
+                             dexterous / sensing / generic
+
+  profiles/                                                                  (v1.0)
+    core.py                  RobotProfile + YAML loader + runtime builder
+    presets.py               franka_arm / turtlebot / spot / tello /
+                             stretch / humanoid_demo
 
   backends/
     mujoco.py                MuJoCoBackend                                   (v0.2)
@@ -569,18 +654,25 @@ ghostloop/
 examples/
   pick_and_place.py                    scripted end-to-end demo
   bench_with_without_geofence.py       paired-comparison demo
-  claude_desktop_mcp_arm.py            MCP server — works with every MCP    (v1.0)
-                                       client, all OSes, all transports
-                                       (stdio / streamable-http / sse)
+  mcp_robot.py                         general MCP server — picks profile   (v1.0)
+                                       via GHOSTLOOP_PROFILE; works with
+                                       arms, mobile bases, quadrupeds,
+                                       drones, humanoids, custom robots
+  claude_desktop_mcp_arm.py            arm-specific MCP example (legacy)    (v1.0)
   claude_desktop_config.json           cross-client + cross-OS config       (v1.0)
                                        reference (Claude Desktop / Cursor /
                                        Continue / Cline / Zed / Gemini CLI)
+  custom_robot.yaml                    sample profile YAML —                (v1.0)
+                                       hospital medication-delivery robot
+                                       with custom primitives + composites
+  custom_robot_primitives.py           sample custom Primitive factories    (v1.0)
+                                       (dispense_pill, alert_nurse)
   direct_llm_arm.py                    direct OpenAI-compatible function    (v1.0)
                                        calling — works with OpenAI /
                                        Anthropic / Gemini / Groq / Ollama
                                        / vLLM / GhostLM
 
-tests/                                  314 tests (8 live-gated)
+tests/                                  333 tests (8 live-gated)
   test_core.py                          23
   test_llm_policy.py                    14
   test_bench.py                         22
@@ -594,6 +686,7 @@ tests/                                  314 tests (8 live-gated)
   test_v09_additions.py                 25
   test_v10_additions.py                 33
   test_v10_v1_additions.py              18
+  test_profiles.py                      19
 
 assets/                                  brand mark + wordmark variants
 docs/                                    architecture / migration / brand notes

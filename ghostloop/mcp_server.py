@@ -164,6 +164,7 @@ def run_mcp_server(
     host: str = "127.0.0.1",
     port: int = 8765,
     mount_path: str | None = None,
+    instructions: str | None = None,
 ) -> None:
     """Construct + run the MCP server. Blocks; exits when the client disconnects.
 
@@ -184,7 +185,9 @@ def run_mcp_server(
     server, the runtime, and every safety gate are unchanged across
     transports — only the wire protocol differs.
     """
-    server = build_mcp_server(runtime, server_name=server_name)
+    server = build_mcp_server(
+        runtime, server_name=server_name, instructions=instructions,
+    )
     if transport in ("sse", "streamable-http"):
         # Export host / port via FastMCP's settings before running so
         # the bound port matches the user's intent. FastMCP defaults to
