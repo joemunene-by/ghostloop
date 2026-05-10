@@ -24,6 +24,17 @@ from .catalogue import (
     reach_targets,
     scan_at_targets,
 )
+from .reward_shaper import (
+    CustomReward,
+    OnDecision,
+    OnObservation,
+    OnPrimitive,
+    RewardComponent,
+    RewardShaper,
+    StepCost,
+    from_dict as reward_shaper_from_dict,
+)
+from .sim2real import Sim2RealBench, Sim2RealReport
 
 __all__ = [
     "Episode",
@@ -44,4 +55,16 @@ __all__ = [
     "preset_reach_8",
     "preset_pick_and_place_4",
     "preset_geofence_smoke",
+    # reward shaper
+    "CustomReward",
+    "OnDecision",
+    "OnObservation",
+    "OnPrimitive",
+    "RewardComponent",
+    "RewardShaper",
+    "StepCost",
+    "reward_shaper_from_dict",
+    # sim2real
+    "Sim2RealBench",
+    "Sim2RealReport",
 ]

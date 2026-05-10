@@ -40,7 +40,7 @@ from .core import (
 from .observations import ObservationBuffer, ObservationRecord
 from .store import EpisodeRow, GhostloopStore, RunRow
 
-__version__ = "0.8.0"
+__version__ = "0.9.0"
 
 __all__ = [
     "AsyncPolicyGate",

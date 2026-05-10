@@ -1,5 +1,109 @@
 # Changelog
 
+## [0.9.0] — 2026-05-10 — ROS2 + Action Smoothing + Safe Projection + Reward Shaper + Sim2Real
+
+Five additions that close the gap between training and deployment.
+ghostloop now has a real-hardware Backend, motion-quality enforcement
+between consecutive moves, action repair when policies overshoot
+constraints, declarative reward shaping per primitive, and a paired
+sim-to-real bench harness with transfer-gap statistics.
+
+### ROS2Backend (ghostloop/backends/ros2.py)
+
+The marquee feature for v0.9: a real-hardware Backend over rclpy.
+Conditional import — the package itself doesn't depend on ROS 2;
+constructing a `ROS2Backend(node_name=...)` raises `ImportError` with
+the `apt install ros-humble-rclpy ...` hint when rclpy isn't on the
+interpreter path.
+
+The backend spins a single rclpy node on a daemon thread; subscriber
+callbacks cache the latest odometry, joint state, and (optional)
+wrench message into a plain dict that `snapshot()` returns. Action
+helpers `publish_twist`, `stop_motion` are the bridge primitives sit
+on top of. `shutdown()` is idempotent so test exits don't leave ROS
+resources around.
+
+### ActionSmoothingGate (ghostloop/policies/smoothing.py)
+
+VLA models and freshly-trained RL policies emit jerky action
+sequences: a 30cm hop one step then a 5mm tap the next. On real
+hardware that's torque spikes and overshoot. `ActionSmoothingGate`
+denies a motion intent whose implied velocity / acceleration exceeds
+configured bounds:
+
+    step_distance = ||new_target - prev_target||
+    velocity      = step_distance / dt
+    acceleration  = (velocity - prev_velocity) / dt
+
+Per-primitive overrides on top of defaults. First-call-always-allowed
+so episodes don't false-positive on the very first move. Stdlib math.
+
+Plus `smooth_target(prev, target, max_step)` — pure helper for
+primitives that want to *clip* an action rather than deny it.
+
+### Safe-action projection (ghostloop/policies/safe_projection.py)
+
+When the safety pipeline would deny a policy's action, repair it
+instead of just rejecting. Two projectors:
+
+  project_to_workspace(intent, workspace)
+      Analytic: clamp to AABB + radial pushout from sphere obstacles.
+      Pure math, fast.
+
+  project_to_sdf(intent, workspace, extras=())
+      Numerical: gradient-descent on the signed-distance field.
+      Slower; handles convex polytopes / half-spaces / arbitrary
+      extras via finite-difference gradient.
+
+Both write a `projected_from` field to the corrected intent's args
+for auditability — a downstream property check can see exactly where
+the policy was repaired.
+
+### Reward shaper DSL (ghostloop/bench/reward_shaper.py)
+
+Declarative reward components: `OnPrimitive`, `OnDecision`,
+`OnObservation`, `StepCost`, `CustomReward`. A `RewardShaper`
+composes them and the total reward for a step is the sum of every
+matching component's value. Example:
+
+    shaper = RewardShaper([
+        OnPrimitive("pick", reward=+1.0, when_status="ok"),
+        OnPrimitive("pick", reward=-2.0, when_status="error"),
+        OnDecision("deny", reward=-5.0),
+        StepCost(-0.01),
+        OnObservation("force_norm", below=10.0, reward=+0.1),
+    ])
+    reward = shaper.score(intent, decision, result)
+
+`score_with_breakdown` returns the per-component breakdown for
+debugging. `from_dict([...])` constructs a shaper from a JSON-friendly
+spec, making reward functions configurable as data.
+
+### Sim2RealBench (ghostloop/bench/sim2real.py)
+
+Paired-comparison harness for the question every robotics team
+eventually asks: "How much does the policy degrade on the real robot,
+and how much of that gap closes when we add domain randomization to
+the sim training?"
+
+Takes two Episode lists (sim + real, paired by index), runs both,
+and produces a `Sim2RealReport` with:
+
+  - per-backend Wilson 95% CI on pass rate
+  - paired McNemar p value for the success-rate gap
+  - Cohen's h effect size + qualitative label
+  - per-primitive symmetric KL of action distributions (cheap
+    "is the policy doing the same kind of work?" proxy)
+  - mean violation-rate gap (safety-pipeline DENY rate per backend)
+
+Renders a Markdown report ready to drop into a CI artifact or a
+weekly transfer-gap dashboard.
+
+### Tests
+
+24 new tests across all five surfaces. Total: 263 passed, 8
+live-gated (mujoco / pybullet / gymnasium / ROS2 when not installed).
+
 ## [0.8.0] — 2026-05-10 — STL + URDF + Domain Randomization + Trace Query + Safe-RL
 
 Five additions across the verification, robot-onboarding, sim2real,

@@ -8,8 +8,8 @@ A tool-using agent runtime, fail-closed safety pipeline, statistically-rigorous 
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Status](https://img.shields.io/badge/status-v0.8.0%20%E2%80%94%20STL%20%2B%20URDF%20%2B%20domain--randomization%20%2B%20trace--query%20%2B%20safe--RL-14B8A6.svg)](#)
-[![Tests](https://img.shields.io/badge/tests-239%20passed%2C%207%20live--gated-14B8A6.svg)](#)
+[![Status](https://img.shields.io/badge/status-v0.9.0%20%E2%80%94%20ROS2%20%2B%20smoothing%20%2B%20safe--projection%20%2B%20reward--shaper%20%2B%20sim2real-14B8A6.svg)](#)
+[![Tests](https://img.shields.io/badge/tests-263%20passed%2C%208%20live--gated-14B8A6.svg)](#)
 
 </div>
 
@@ -189,9 +189,9 @@ Models from the [MuJoCo Menagerie](https://github.com/google-deepmind/mujoco_men
 | v0.5.0 | VLAPolicy adapter, sensor primitives + cameras, OpenTelemetry hooks, SQLite persistence, planner DSL, 142 tests |
 | v0.6.0 | Fleet abstraction, FastAPI dashboard, LLMPlanner, RetryGate, observation buffer, property combinators, 182 tests |
 | v0.7.0 | GymnasiumBackend, CooldownGate + TimeWindowGate, convex polytope SDF, composite primitives, Mission DAG runner, WebSocket trace streaming, 211 tests |
-| **v0.8.0 (now)** | **STL temporal properties (Always / Eventually / Until)**, **URDF workspace builder**, **domain-randomized Backend wrapper**, **trace query DSL**, **safe-RL training harness with Lagrangian multiplier**, 239 tests |
-| v0.9 | `ROS2Backend` for real-hardware deployments via DDS; multi-modal perception (RGB-D fusion + lightweight object detection). |
-| v1.0 | End-to-end VLA-on-MuJoCo benchmarks reproducing OpenVLA / π0 numbers under our trace + safety regime; fleet dashboard productionised. |
+| v0.8.0 | STL temporal properties, URDF workspace builder, RandomizedBackend, trace query DSL, safe-RL harness with Lagrangian, 239 tests |
+| **v0.9.0 (now)** | **`ROS2Backend` (rclpy adapter, conditional)**, **`ActionSmoothingGate` (velocity / acceleration limits)**, **safe-action projection (analytic + SDF)**, **declarative reward shaper DSL**, **`Sim2RealBench` paired transfer-gap harness**, 263 tests |
+| v1.0 | Multi-modal perception (RGB-D fusion + lightweight object detection), end-to-end VLA-on-MuJoCo benchmarks reproducing OpenVLA / π0 numbers under our trace + safety regime, fleet dashboard productionised. |
 
 ## Repository layout
 

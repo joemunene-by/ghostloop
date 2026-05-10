@@ -20,16 +20,19 @@ from .menagerie import (
 from .mujoco import MuJoCoBackend, mujoco_available
 from .pybullet import PyBulletBackend, pybullet_available
 from .randomized import RandomizationConfig, RandomizedBackend
+from .ros2 import ROS2Backend, ros2_available
 
 __all__ = [
     "GymnasiumBackend",
     "MuJoCoBackend",
     "PyBulletBackend",
+    "ROS2Backend",
     "RandomizationConfig",
     "RandomizedBackend",
     "gymnasium_available",
     "mujoco_available",
     "pybullet_available",
+    "ros2_available",
     "MenagerieError",
     "KNOWN_MODELS",
     "ensure_menagerie",

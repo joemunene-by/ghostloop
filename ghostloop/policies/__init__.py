@@ -18,7 +18,9 @@ from .human_in_the_loop import (
 from .llm import LLMPolicy, LLMPolicyConfig, LLMPolicyError, llm_policy_loop
 from .rate_limit import RateLimitGate
 from .retry import RetryPolicy, is_any_error, is_transient_error
+from .safe_projection import project_to_sdf, project_to_workspace
 from .sdf import ConvexPolytope, HalfSpace, signed_distance
+from .smoothing import ActionSmoothingGate, smooth_target
 from .time_window import TimeWindowGate, Window
 from .urdf import URDFParseStats, workspace_from_urdf
 from .vla import (
@@ -72,4 +74,10 @@ __all__ = [
     # URDF
     "URDFParseStats",
     "workspace_from_urdf",
+    # Smoothing
+    "ActionSmoothingGate",
+    "smooth_target",
+    # Safe projection
+    "project_to_workspace",
+    "project_to_sdf",
 ]
