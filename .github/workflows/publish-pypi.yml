@@ -85,7 +85,7 @@ jobs:
       - name: Upload wheel as workflow artifact
         # Useful for downloading the exact wheel that was published from
         # the Actions UI, in case PyPI search is slow.
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ghostloop-${{ github.ref_name }}
           path: dist/
