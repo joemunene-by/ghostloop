@@ -164,7 +164,7 @@ jobs:
         # CHANGELOG section as the body and the wheel + sdist attached.
         # `make_latest: legacy` defers to the tag-name semver ordering
         # so non-prereleases auto-promote to "Latest".
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           # ref_name is already the tag like "v1.0.3" — don't double the v.
           name: "${{ github.ref_name }} — ghostloop"
