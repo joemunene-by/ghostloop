@@ -14,3 +14,6 @@ dist/
 .coverage
 htmlcov/
 .DS_Store
+
+# native PyO3 build artifact (build with maturin)
+ghostloop/_rt_safety*.so

@@ -1,0 +1,23 @@
+[package]
+name = "rt_safety"
+version = "0.1.0"
+edition = "2021"
+authors = ["Joe Munene <joemunene984@gmail.com>"]
+description = "Allocation-free, real-time-grade port of ghostloop's safe-projection envelope, exposed to Python via PyO3."
+license = "MIT"
+
+[lib]
+# cdylib: the Python extension module (.so / .pyd).
+# rlib:   so the same logic can be unit-tested with `cargo test` and reused
+#         by other Rust crates (the M4 rt_control campaign core).
+name = "rt_safety"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+pyo3 = { version = "0.22", features = ["extension-module"] }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
