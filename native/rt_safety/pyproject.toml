@@ -1,0 +1,21 @@
+# maturin build config for the rt_safety extension.
+#
+# This pyproject exists only so `maturin` knows how to compile the PyO3
+# cdylib (it injects the macOS `-undefined dynamic_lookup` link flag that a
+# bare `cargo build` of an extension-module cdylib lacks). The compiled
+# artifact is installed into the ghostloop package as `ghostloop._rt_safety`;
+# the parent ghostloop project itself stays a plain setuptools build.
+[build-system]
+requires = ["maturin>=1.7,<2"]
+build-backend = "maturin"
+
+[project]
+name = "ghostloop-rt-safety"
+version = "0.1.0"
+description = "Allocation-free real-time port of ghostloop's safe-projection envelope."
+requires-python = ">=3.10"
+
+[tool.maturin]
+# Install the compiled module at ghostloop._rt_safety so the in-tree shim's
+# `from ghostloop import _rt_safety` resolves.
+module-name = "ghostloop._rt_safety"
