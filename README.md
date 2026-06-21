@@ -17,6 +17,14 @@ A tool-using agent runtime, fail-closed safety pipeline, statistically-rigorous 
 [![Tests](https://img.shields.io/badge/tests-359%20passed%2C%208%20live--gated-14B8A6.svg)](#)
 [![CI](https://github.com/joemunene-by/ghostloop/actions/workflows/ci.yml/badge.svg)](https://github.com/joemunene-by/ghostloop/actions/workflows/ci.yml)
 
+<br/>
+
+<a href="assets/ghostloop-connect.mp4">
+  <img src="assets/connect-poster.png" alt="Watch: connect any robot to ghostloop in 4 steps" width="760">
+</a>
+
+<sub>▶ <b><a href="assets/ghostloop-connect.mp4">Watch — connect any robot in 4 steps</a></b> · 80-second walkthrough</sub>
+
 </div>
 
 ---
