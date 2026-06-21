@@ -19,11 +19,11 @@ A tool-using agent runtime, fail-closed safety pipeline, statistically-rigorous 
 
 <br/>
 
-<a href="assets/ghostloop-connect.mp4">
-  <img src="assets/connect-poster.png" alt="Watch: connect any robot to ghostloop in 4 steps" width="760">
+<a href="assets/ghostloop-story.mp4">
+  <img src="assets/story-poster.png" alt="ghostloop — the film. Drone control, fail-closed safety, GhostLM, and the ghost family." width="820">
 </a>
 
-<sub>▶ <b><a href="assets/ghostloop-connect.mp4">Watch — connect any robot in 4 steps</a></b> · 80-second walkthrough</sub>
+<sub>▶ <b><a href="assets/ghostloop-story.mp4">Watch the film</a></b> · 2 min, narrated &nbsp;·&nbsp; or jump to the <b><a href="assets/ghostloop-connect.mp4">80-second hands-on walkthrough</a></b></sub>
 
 </div>
 
