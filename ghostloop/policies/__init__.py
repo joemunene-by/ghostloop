@@ -15,7 +15,8 @@ from .human_in_the_loop import (
     always_deny,
     cli_approver,
 )
-from .llm import LLMPolicy, LLMPolicyConfig, LLMPolicyError, llm_policy_loop
+from .claude import CLAUDE_PRICES, ClaudePolicy, ClaudePolicyConfig
+from .llm import LLMPolicy, LLMPolicyConfig, LLMPolicyError, llm_episode_policy, llm_policy_loop
 from .rate_limit import RateLimitGate
 from .retry import RetryPolicy, is_any_error, is_transient_error
 from .safe_projection import project_to_sdf, project_to_workspace
@@ -49,6 +50,10 @@ __all__ = [
     "always_deny",
     "cli_approver",
     "llm_policy_loop",
+    "llm_episode_policy",
+    "ClaudePolicy",
+    "ClaudePolicyConfig",
+    "CLAUDE_PRICES",
     # VLA
     "ActionDecoder",
     "DeltaXYZDecoder",

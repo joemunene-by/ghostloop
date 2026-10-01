@@ -40,6 +40,14 @@ KNOWN_MODELS = {
 }
 
 
+ROBOT_DEFAULTS: dict[str, dict[str, object]] = {
+    "ur5e": {"site": "attachment_site", "keyframe": "home", "control": "ik"},
+    "ur10e": {"site": "attachment_site", "keyframe": "home", "control": "ik"},
+    "franka": {"end_effector": "hand", "keyframe": "home", "control": "ik"},
+    "panda": {"end_effector": "hand", "keyframe": "home", "control": "ik"},
+}
+
+
 class MenagerieError(RuntimeError):
     """Raised when the menagerie can't be located or a model name isn't resolvable."""
 
@@ -56,7 +64,7 @@ def _resolve_root(menagerie_root: str | None) -> Path:
 def ensure_menagerie(menagerie_root: str | None = None, *, allow_clone: bool = True) -> Path:
     """Return the menagerie root, cloning into cache on first call if needed."""
     root = _resolve_root(menagerie_root)
-    if (root / "franka_emika_panda").is_dir():
+    if any((root / rel.split("/")[0]).is_dir() for rel in KNOWN_MODELS.values()):
         return root
     if not allow_clone:
         raise MenagerieError(

@@ -46,9 +46,10 @@ class EpisodeResult:
     final_state: dict[str, Any]
     trace: Trace
     notes: str = ""
+    extras: dict[str, Any] = field(default_factory=dict)
 
     def to_json(self) -> dict[str, Any]:
-        return {
+        out = {
             "episode_name": self.episode_name,
             "passed": self.passed,
             "steps": self.steps,
@@ -56,6 +57,9 @@ class EpisodeResult:
             "n_events": len(self.trace.events),
             "notes": self.notes,
         }
+        if self.extras:
+            out["extras"] = self.extras
+        return out
 
 
 @dataclass
@@ -73,10 +77,12 @@ class EpisodeRunner:
         # 2. Callable that runs its own loop and returns a summary -> already done.
         produced = episode.policy(runtime)
         steps = 0
+        extras: dict[str, Any] = {}
         if produced is None:
             steps = len(runtime.trace.events)
         elif isinstance(produced, dict) and "steps" in produced:
             steps = int(produced["steps"])
+            extras = {k: v for k, v in produced.items() if k in ("usage", "cost_usd", "terminated")}
         else:
             for intent in produced:
                 runtime.step(intent)
@@ -92,6 +98,7 @@ class EpisodeRunner:
             steps=steps,
             final_state=final_state,
             trace=runtime.trace,
+            extras=extras,
         )
 
     def run_all(self, episodes: Iterable[Episode]) -> list[EpisodeResult]:

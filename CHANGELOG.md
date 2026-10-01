@@ -1,5 +1,84 @@
 # Changelog
 
+## [1.1.0] - 2026-10-01 - Real arm control, backend plugins, cross-backend bench, NaN hardening
+
+### Safety fixes (behaviour changes)
+
+- **NaN/inf arguments are denied by every pipeline.** NaN compares false against
+  every bound, so `GeofenceGate`, `ObstacleAvoidanceGate` and `ForceCapGate`
+  allowed `move_to(x=nan)`, including the string `"nan"` that an LLM can emit.
+  `PolicyPipeline.check` and `AsyncPolicyPipeline.check` now deny any intent
+  with a non-finite number (or numeric string) anywhere in its arguments, as
+  gate `finite_args`, before the first gate runs. This applies to empty
+  pipelines too.
+- The three gates above also reject non-finite targets on their own.
+- `ForceCapGate` now denies a capped key whose value isn't a number
+  (`force="high"`). It used to skip it silently.
+- `MockBackend` `move_to` returns `ERROR` for non-finite targets.
+
+### MuJoCo: real Cartesian control
+
+- `move_to` on articulated arms solves position-only damped least-squares IK on
+  a scratch `MjData`, sends the solution to position actuators, advances with
+  gravity compensation and waits for joints to settle (bounded by
+  `settle_timeout`). UR5e and Panda track within 0.1 mm.
+- Unreachable targets (IK residual above `ik_tolerance`, default 5 mm) return
+  `ERROR` and the arm doesn't move.
+- Previously `move_to` wrote x/y/z into the first three `qpos` entries, which on
+  an arm are joint angles. Models whose first three joints are slide joints keep
+  that behaviour (`control="auto"`); force either path with `control="ik"` or
+  `control="naive"`.
+- New `MuJoCoBackend` options: `site`, `keyframe`, `control`,
+  `gravity_compensation`, `ik_tolerance`, `settle_timeout`, `settle_velocity`.
+- `MuJoCoBackend.from_menagerie("ur5e" | "ur10e" | "panda")` with IK defaults,
+  and `describe()` for provenance (engine version, menagerie commit, settings;
+  no absolute paths).
+
+### Backend registry and plugins
+
+- `create_backend("mujoco:ur5e")`, `list_backends()`, `register_backend()`.
+- Third-party backends register through the `ghostloop.backends` entry-point
+  group. A plugin that fails to import is reported, not raised.
+  `GHOSTLOOP_DISABLE_PLUGINS=1` skips discovery.
+- `ghostloop.testing.check_backend_conformance` / `assert_backend_conforms`.
+- `docs/BACKENDS.md`: how to write, ship and check a backend.
+
+### Bench
+
+- `ghostloop xbench` and `cross_backend_compare`: run a preset for several seeds
+  on two backends and pair the results. Reports Wilson CIs, McNemar, Cohen's h,
+  per-primitive action KL, final-position divergence (canonical units and mm),
+  provenance for both backends, and writes one JSONL trace per episode per side.
+- `Workspace` canonical frame (`ghostloop.bench.frames`) so presets, gates and
+  success predicates written once run on any embodiment.
+- All presets take `seed`, `tolerance` and `jitter`. Unseeded calls are
+  unchanged. New `preset_workspace_grid_27`. `PRESETS` maps names to builders.
+- `ghostloop eval --backend --seed --tolerance`.
+- `EpisodeResult.extras` carries usage, cost and termination reason from LLM
+  policies; `spend_summary(results)` reports cost per completed task.
+
+### Model policies
+
+- `ClaudePolicy` (`pip install ghostloop[anthropic]`): native Anthropic SDK
+  policy. Defaults to `claude-opus-5-5`, explicit effort, server-side refusal
+  fallback, prompt caching, one primitive per step, refusal handling, and cost
+  accounting from `CLAUDE_PRICES`.
+- `LLMPolicy` tool results now answer the real `tool_call_id`. The old `"prev"`
+  placeholder was rejected by strict OpenAI-compatible servers. Extra parallel
+  tool calls get a "not executed" result.
+- Tool schemas use real JSON types and leave optional arguments out of
+  `required`.
+- Token usage tracking, `price_per_mtok`, and `LLMPolicyConfig.for_provider()`
+  presets (ollama, vllm, lmstudio, openai, openrouter, groq).
+- `llm_policy_loop(..., policy=...)` accepts any policy object and returns
+  `usage` and `cost_usd`. `llm_episode_policy` plugs an LLM policy into a bench.
+
+### CI
+
+- New `physics` job: installs MuJoCo, fetches the UR5e and Panda models, runs
+  the full suite with the IK and conformance tests, and uploads an `xbench`
+  report as an artifact.
+
 ## [1.0.3] — 2026-05-10 — Auto-create GitHub release pages on tag push
 
 The `publish-pypi.yml` workflow now also creates a GitHub release page

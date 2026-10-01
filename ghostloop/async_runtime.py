@@ -42,6 +42,7 @@ from .core import (
     ResultStatus,
     Trace,
     TraceEvent,
+    finite_args_decision,
 )
 
 
@@ -73,6 +74,9 @@ class AsyncPolicyPipeline:
     gates: list[GateLike] = field(default_factory=list)
 
     async def check(self, intent: Intent, primitive: Primitive) -> Decision:
+        rejected = finite_args_decision(intent)
+        if rejected is not None:
+            return rejected
         passed: list[str] = []
         for gate in self.gates:
             decision_or_coro = gate.check(intent, primitive)

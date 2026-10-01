@@ -13,6 +13,7 @@ shipped to a fleet dashboard. There is no global state — pass a Runtime around
 from __future__ import annotations
 
 import json
+import math
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -176,11 +177,47 @@ class PolicyGate(Protocol):
     def check(self, intent: Intent, primitive: Primitive) -> Decision: ...
 
 
+_NON_FINITE_STRINGS = {"nan", "+nan", "-nan", "inf", "+inf", "-inf", "infinity", "+infinity", "-infinity"}
+
+
+def non_finite_arg(value: Any, path: str = "") -> str | None:
+    """Return the path of the first NaN/inf number (or numeric string) in ``value``.
+
+    NaN compares False against every bound, so a range check written as
+    ``if v < lo or v > hi: deny`` silently allows it.
+    """
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, float):
+        return None if math.isfinite(value) else (path or "<value>")
+    if isinstance(value, str):
+        return (path or "<value>") if value.strip().lower() in _NON_FINITE_STRINGS else None
+    if isinstance(value, dict):
+        for k, v in value.items():
+            hit = non_finite_arg(v, f"{path}.{k}" if path else str(k))
+            if hit:
+                return hit
+    elif isinstance(value, (list, tuple)):
+        for i, v in enumerate(value):
+            hit = non_finite_arg(v, f"{path}[{i}]")
+            if hit:
+                return hit
+    return None
+
+
+def finite_args_decision(intent: Intent) -> Decision | None:
+    bad = non_finite_arg(intent.args)
+    if bad is None:
+        return None
+    return Decision.deny("finite_args", f"non-finite value in argument {bad!r}")
+
+
 @dataclass
 class PolicyPipeline:
     """Ordered list of gates with fail-closed semantics.
 
-    On the first DENY, the pipeline stops and returns that decision. If every
+    Intents carrying NaN/inf arguments are denied before any gate runs. On
+    the first DENY, the pipeline stops and returns that decision. If every
     gate ALLOWs, the pipeline returns a synthesised ALLOW with the names of
     all gates that passed (for trace transparency).
     """
@@ -188,6 +225,9 @@ class PolicyPipeline:
     gates: list[PolicyGate] = field(default_factory=list)
 
     def check(self, intent: Intent, primitive: Primitive) -> Decision:
+        rejected = finite_args_decision(intent)
+        if rejected is not None:
+            return rejected
         passed: list[str] = []
         for gate in self.gates:
             decision = gate.check(intent, primitive)

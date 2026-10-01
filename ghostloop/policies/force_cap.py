@@ -7,6 +7,8 @@ Pass-through for intents without any of those keys."""
 
 from __future__ import annotations
 
+import math
+
 from dataclasses import dataclass, field
 
 from ..core import Decision, Intent, Primitive
@@ -55,8 +57,8 @@ class ForceCapGate:
             try:
                 v = float(value)
             except (TypeError, ValueError):
-                continue
-            if abs(v) > cap:
+                return Decision.deny(self.name, f"{key}={value!r} is not a number")
+            if not math.isfinite(v) or abs(v) > cap:
                 return Decision.deny(
                     self.name,
                     f"{key}={v:g} exceeds cap {cap:g}",

@@ -6,15 +6,15 @@
 
 A tool-using agent runtime, fail-closed safety pipeline, statistically-rigorous bench harness, and sim-first execution layer for embodied AI. Sister project to [GhostLM](https://github.com/joemunene-by/GhostLM).
 
-**Now live:** [`pip install ghostloop`](https://pypi.org/project/ghostloop/) · [interactive demo](https://huggingface.co/spaces/Ghostgim/ghostloop-demo) · 11 releases · 333 tests · MIT.
+**Now live:** [`pip install ghostloop`](https://pypi.org/project/ghostloop/) · [interactive demo](https://huggingface.co/spaces/Ghostgim/ghostloop-demo) · 12 releases · 411 tests · MIT.
 
 [![PyPI](https://img.shields.io/pypi/v/ghostloop?color=14B8A6&label=pypi)](https://pypi.org/project/ghostloop/)
 [![Downloads](https://static.pepy.tech/badge/ghostloop/month)](https://pepy.tech/project/ghostloop)
 [![HF Space](https://img.shields.io/badge/🤗%20live%20demo-Ghostgim%2Fghostloop--demo-FFD21E)](https://huggingface.co/spaces/Ghostgim/ghostloop-demo)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Status](https://img.shields.io/badge/status-v1.0.2%20%E2%80%94%20production-14B8A6.svg)](#)
-[![Tests](https://img.shields.io/badge/tests-359%20passed%2C%208%20live--gated-14B8A6.svg)](#)
+[![Status](https://img.shields.io/badge/status-v1.1.0%20production-14B8A6.svg)](#)
+[![Tests](https://img.shields.io/badge/tests-411%2C%20extras%20gated-14B8A6.svg)](#)
 [![CI](https://github.com/joemunene-by/ghostloop/actions/workflows/ci.yml/badge.svg)](https://github.com/joemunene-by/ghostloop/actions/workflows/ci.yml)
 
 <br/>
@@ -75,19 +75,38 @@ That layer is `ghostloop`. The shape is borrowed from `GhostAgent` in [GhostLM](
 | `judges` | LLM-as-judge + heuristic rule-based trace scoring. |
 | `training` | Constrained-MDP rollout collector + Lagrangian multiplier + HER relabeling. |
 
-## What ships in v0.10.0
+## New in v1.1.0
 
-70+ modules across ten releases. Highlights:
+- **Real Cartesian control on MuJoCo arms.** `move_to` on a UR5e or Panda now solves damped least-squares IK and drives the position actuators with gravity compensation (0.1 mm tracking). Unreachable targets fail closed with an `ERROR` and the arm does not move. Before 1.1, `move_to` on an arm wrote x/y/z into the first three joint angles.
+- **Backend plugin registry.** `create_backend("mujoco:ur5e")`, `ghostloop backends`, and a `ghostloop.backends` entry-point group so other simulators ship adapters as their own packages. See [docs/BACKENDS.md](docs/BACKENDS.md).
+- **Conformance kit.** `ghostloop.testing.assert_backend_conforms(spec)` checks the properties the bench relies on: honest `move_to` results, fail-closed unreachable targets, NaN rejection, determinism.
+- **Cross-backend paired bench.** `ghostloop xbench --a mujoco:ur5e --b <other>` runs the same seeded episodes on two backends through a shared canonical workspace and writes a paired report (Wilson CIs, McNemar, Cohen's h, final-position divergence in mm), full provenance, and one JSONL trace per episode per side.
+- **Seeded, tolerance-aware presets.** Every preset takes `seed`, `tolerance` and `jitter`; new `preset_workspace_grid_27`.
+- **Non-finite argument rejection.** NaN compares false against every bound, so `GeofenceGate`, `ObstacleAvoidanceGate` and `ForceCapGate` allowed `x=nan` (including the string `"nan"` an LLM can emit). Every `PolicyPipeline` now denies NaN/inf arguments before any gate runs, and those gates are fixed on their own too.
+- **Native Claude policy.** `ClaudePolicy` uses the official Anthropic SDK (`pip install ghostloop[anthropic]`) with server-side refusal fallback, prompt caching, one primitive per step and per-episode cost accounting. `spend_summary(results)` reports cost per completed task.
+- **OpenAI-compatible policy fixes.** Tool results now answer the real `tool_call_id` (strict endpoints rejected the old placeholder), schemas carry real JSON types and optional arguments, token usage is tracked, and `LLMPolicyConfig.for_provider(...)` presets common endpoints.
+
+A concrete example of what the cross-backend bench is for: the same UR5e with gravity compensation turned off sags about 9 mm. At a 3.5 mm success radius that takes `workspace_grid_27` from 81/81 to 7/81 (McNemar p = 1e-22), which is exactly the kind of engine sensitivity you want surfaced before trusting a sim result.
+
+```bash
+ghostloop xbench --preset workspace_grid_27 --a mujoco:ur5e --b mujoco:ur5e \
+  --b-arg gravity_compensation=false --seeds 0 1 2 --out-dir xbench-out
+```
+
+## What ships
+
+80+ modules across twelve releases. Highlights:
 
 ### Core runtime
 13 abstractions in `core.py` (Intent / Primitive / Result / Decision / PolicyGate / PolicyPipeline / Backend / MockBackend / TraceEvent / Trace / Runtime / Registry / DecisionAction). `async_runtime.py` mirrors them with awaitable gates + a `control_loop(rate_hz)`.
 
 ### Policy gates (12)
-`DenyListGate`, `RateLimitGate`, `GeofenceGate`, `ForceCapGate`, `HumanInTheLoopGate`, `ObstacleAvoidanceGate`, `RetryPolicy`, `CooldownGate`, `TimeWindowGate`, `ActionSmoothingGate` (velocity / acceleration limits), plus the `LLMPolicy` and `VLAPolicy` adapters. All fail-closed.
+`DenyListGate`, `RateLimitGate`, `GeofenceGate`, `ForceCapGate`, `HumanInTheLoopGate`, `ObstacleAvoidanceGate`, `RetryPolicy`, `CooldownGate`, `TimeWindowGate`, `ActionSmoothingGate` (velocity / acceleration limits), plus the `LLMPolicy`, `ClaudePolicy` and `VLAPolicy` adapters. All fail-closed, and every pipeline rejects NaN/inf arguments before the first gate.
 
-### Backends (6)
+### Backends (6, plus plugins)
+All of them are built by spec through `create_backend(...)` / `ghostloop backends`; third-party simulators register through the `ghostloop.backends` entry point.
 - **`MockBackend`** — zero-install in-memory.
-- **`MuJoCoBackend`** — Google DeepMind MuJoCo with Menagerie auto-clone (Franka / UR5e / Spot / Stretch / Aloha / Allegro).
+- **`MuJoCoBackend`**: Google DeepMind MuJoCo with Menagerie auto-clone. `MuJoCoBackend.from_menagerie("ur5e")` gives IK-driven Cartesian control on UR5e / UR10e / Panda.
 - **`PyBulletBackend`** — Bullet physics for users without MuJoCo.
 - **`GymnasiumBackend`** — wrap any Farama Gymnasium env (hundreds of robotics + RL envs).
 - **`ROS2Backend`** — rclpy adapter for real-hardware deployments via DDS.
@@ -102,7 +121,10 @@ That layer is `ghostloop`. The shape is borrowed from `GhostAgent` in [GhostLM](
 - `Sim2RealBench` — paired transfer-gap harness with per-primitive action-distribution KL.
 - `random_seeds` / `grid_seeds` / `cma_es_seeds` — adversarial fuzzers for finding failure-prone Episode initial states.
 - `RewardShaper` — declarative reward DSL (`OnPrimitive` / `OnDecision` / `OnObservation` / `StepCost` / `CustomReward`).
-- Episode catalogue: `preset_reach_8` / `preset_pick_and_place_4` / `preset_geofence_smoke`.
+- Episode catalogue: `preset_reach_8` / `preset_pick_and_place_4` / `preset_geofence_smoke` / `preset_workspace_grid_27`, all seedable.
+- `cross_backend_compare` / `ghostloop xbench`: the same seeded episodes on two backends, paired, with provenance and traces.
+- `Workspace` canonical frame so presets, gates and predicates written once run on any embodiment.
+- `spend_summary`: token and dollar cost per completed task for LLM-driven runs.
 
 ### Properties + verification
 - `PropertyEngine` with built-in invariants (`StaysInsideWorkspace`, `NeverHoldsTwoObjects`, `NeverExceedsRate`, `NoConsecutiveDuplicateIntents`).
@@ -143,7 +165,8 @@ That layer is `ghostloop`. The shape is borrowed from `GhostAgent` in [GhostLM](
 
 ### MCP + LLM integration
 - `mcp_server.py` exposes the runtime as a FastMCP server so Claude Desktop / Cursor / any MCP client can drive a robot through the safety pipeline.
-- `LLMPolicy` (closed-loop) and `LLMPlanner` (single-shot full-plan emission).
+- `LLMPolicy` (any OpenAI-compatible endpoint), `ClaudePolicy` (native Anthropic SDK), and `LLMPlanner` (single-shot full-plan emission).
+- `llm_episode_policy` turns any of them into a bench policy, so models can be scored with the same Wilson / McNemar machinery as scripted policies.
 
 ## Setup
 
@@ -161,7 +184,7 @@ PYTHONPATH=. python3 examples/pick_and_place.py
 # Run a paired-comparison bench (Wilson CI + McNemar + Cohen's h).
 PYTHONPATH=. python3 examples/bench_with_without_geofence.py
 
-# Full test suite — 314 pass, 8 live-gated (skip cleanly without extras).
+# Full test suite: 411 tests; backend and model tests skip cleanly without their extras.
 PYTHONPATH=. python3 -m pytest tests/
 ```
 
@@ -358,7 +381,7 @@ Mobile MCP clients (Claude iOS once it ships remote MCP, plus the growing crop o
 Already have a model running and don't want to bother with MCP? `examples/direct_llm_arm.py` skips the protocol entirely and uses ghostloop's `LLMPolicy` to drive any OpenAI-compatible chat endpoint via native function calling. Tested against:
 
 - **OpenAI** GPT-4o / GPT-4o-mini
-- **Anthropic** Claude (via the OpenAI-compatible proxy endpoint)
+- **Anthropic** Claude (or use the native `ClaudePolicy`, below)
 - **Google Gemini** (via OpenAI-compatible adapter)
 - **Groq** (Llama 3.x, DeepSeek, Mixtral)
 - **Ollama** (local Qwen, Llama, Mistral, GhostLM)
@@ -409,22 +432,46 @@ summary = llm_policy_loop(
 runtime.trace.write_jsonl("episode.jsonl")
 ```
 
+### Drive Claude natively
+
+```python
+from ghostloop.policies import ClaudePolicy, ClaudePolicyConfig, llm_policy_loop
+
+policy = ClaudePolicy(registry=registry, config=ClaudePolicyConfig(effort="medium"))
+summary = llm_policy_loop(registry, runtime, goal="Reach (0.4, 0.2, 0.1), then scan.", policy=policy)
+print(summary["terminated"], summary["usage"], summary["cost_usd"])
+```
+
+Defaults to `claude-opus-5-5` with server-side refusal fallback on. Set `fallbacks=False` for platforms that don't support it (Bedrock, Vertex, Foundry).
+
 ### Drive a real physics simulation
 
 ```python
 from ghostloop import PolicyPipeline, PrimitiveRegistry, Runtime, Intent
-from ghostloop.backends import MuJoCoBackend
-from ghostloop.backends.mujoco import move_to, scan
+from ghostloop.backends import create_backend
 
-backend = MuJoCoBackend(model_path="franka_panda.xml", end_effector="hand")
-registry = PrimitiveRegistry([move_to(), scan()])
-runtime = Runtime(backend=backend, registry=registry, policy_pipeline=PolicyPipeline())
+binding = create_backend("mujoco:ur5e")          # Menagerie model, IK control, gravity comp
+runtime = Runtime(backend=binding.backend, registry=PrimitiveRegistry(binding.primitives),
+                  policy_pipeline=PolicyPipeline())
 
-runtime.step(Intent("move_to", {"x": 0.4, "y": 0.0, "z": 0.5, "duration": 1.0}))
-runtime.step(Intent("scan", {"radius": 0.5}))
+runtime.step(Intent("move_to", {"x": 0.5, "y": 0.2, "z": 0.3}))   # metres, robot base frame
+runtime.step(Intent("move_to", {"x": 3.0, "y": 0.0, "z": 0.0}))   # ERROR: unreachable, arm stays put
 ```
 
-Models from the [MuJoCo Menagerie](https://github.com/google-deepmind/mujoco_menagerie) drop in directly: Franka Panda, UR5e, Stretch RE3, Allegro hand, Spot, Aloha bimanual.
+Models from the [MuJoCo Menagerie](https://github.com/google-deepmind/mujoco_menagerie) drop in directly. UR5e, UR10e and Panda have IK defaults; any other MJCF works with `MuJoCoBackend(model_path=..., site=..., control="ik")`.
+
+### Cross-backend bench
+
+```python
+from ghostloop.bench.catalogue import PRESETS
+from ghostloop.bench.cross import cross_backend_compare
+
+report = cross_backend_compare(PRESETS["reach_8"], "mujoco:ur5e", "yoursim:ur5e",
+                               seeds=[0, 1, 2], tolerance=0.01)
+report.write("xbench-out")          # report.md, report.json, traces/a/*.jsonl, traces/b/*.jsonl
+```
+
+Both sides run the same seeded targets in a canonical frame mapped onto the embodiment's workspace, so episodes pair one to one. Any registered backend works; see [docs/BACKENDS.md](docs/BACKENDS.md) to add one.
 
 ### Counterfactual replay — "what would the new policy have done?"
 
@@ -556,7 +603,9 @@ prims = reg.build("franka", ["pick"])    # robot-specific primitives
 | v0.8.0 | STL temporal properties, URDF workspace builder, RandomizedBackend, trace query DSL, safe-RL harness with Lagrangian, 239 tests |
 | v0.9.0 | ROS2Backend, ActionSmoothingGate, safe-action projection, reward shaper DSL, Sim2RealBench, 263 tests |
 | v0.10.0 | Counterfactual trace replay, causal failure attribution, LLM-as-judge for traces, adversarial bench generator, property mining, skill graph, hindsight relabeling, energy ledger, cross-embodiment morphology registry, 296 tests |
-| **v1.0.0 (now)** | **RGB-D fusion + deproject_depth + BlobDetector + CameraProcessorPipeline**, **VLABenchmarkSuite + published-baseline catalogue (OpenVLA / π0 / RT-2 / Octo / Diffusion Policy / ACT)**, **production fleet dashboard (StaticTokenAuth / RateLimiter / AlarmRegistry / Prometheus /metrics / livez+readyz)**, 314 tests |
+| v1.0.0 | RGB-D fusion + deproject_depth + BlobDetector + CameraProcessorPipeline, VLABenchmarkSuite + published-baseline catalogue (OpenVLA / π0 / RT-2 / Octo / Diffusion Policy / ACT), production fleet dashboard (StaticTokenAuth / RateLimiter / AlarmRegistry / Prometheus /metrics / livez+readyz), 314 tests |
+| v1.0.2 | Distillation pipeline, deadline scheduler, live intervention, calibration, 359 tests |
+| **v1.1.0 (now)** | **IK-driven MuJoCo arms**, **backend plugin registry + conformance kit**, **cross-backend paired bench (`xbench`)**, **seeded presets + canonical workspace frame**, **NaN/inf rejection in every pipeline**, **native `ClaudePolicy` + spend per completed task**, 411 tests |
 
 ## Repository layout
 
@@ -568,6 +617,7 @@ ghostloop/
   observations.py            ObservationBuffer (deque-based short-term memory)
   store.py                   GhostloopStore — SQLite episodes / runs / comparisons
   mcp_server.py              FastMCP server exposing Runtime as MCP tools
+  testing.py                 backend conformance kit                          (v1.1)
   counterfactual.py          replay_with_policy + CounterfactualTrace        (v0.10)
   causal.py                  attribute_failure + minimal_cause_set            (v0.10)
 
@@ -586,6 +636,7 @@ ghostloop/
     safe_projection.py       project_to_workspace + project_to_sdf            (v0.9)
     retry.py                 RetryPolicy + transient-error helpers
     llm.py                   LLMPolicy + LLMPolicyConfig + llm_policy_loop
+    claude.py                ClaudePolicy (Anthropic SDK)                     (v1.1)
     vla.py                   VLAPolicy + DeltaXYZDecoder
 
   primitives/
@@ -610,6 +661,7 @@ ghostloop/
     ros2.py                  ROS2Backend (rclpy adapter)                     (v0.9)
     randomized.py            RandomizedBackend (sim2real wrapper)            (v0.8)
     menagerie.py             MuJoCo Menagerie auto-clone                     (v0.4)
+    registry.py              create_backend + plugin entry points            (v1.1)
 
   bench/
     episode.py               Episode + EpisodeRunner + EpisodeResult         (v0.2)
@@ -619,6 +671,8 @@ ghostloop/
     reward_shaper.py         RewardShaper + OnPrimitive / OnDecision / …     (v0.9)
     sim2real.py              Sim2RealBench + Sim2RealReport                   (v0.9)
     adversarial.py           random_seeds / grid_seeds / cma_es_seeds        (v0.10)
+    frames.py                Workspace canonical frame + FramedBackend       (v1.1)
+    cross.py                 cross_backend_compare + CrossBackendReport      (v1.1)
 
   properties/
     core.py                  Property + PropertyEngine + Severity            (v0.5)
@@ -681,25 +735,29 @@ examples/
                                        with custom primitives + composites
   custom_robot_primitives.py           sample custom Primitive factories    (v1.0)
                                        (dispense_pill, alert_nurse)
+  cross_backend_bench.py               cross-backend paired report          (v1.1)
   direct_llm_arm.py                    direct OpenAI-compatible function    (v1.0)
                                        calling — works with OpenAI /
                                        Anthropic / Gemini / Groq / Ollama
                                        / vLLM / GhostLM
 
-tests/                                  333 tests (8 live-gated)
+tests/                                  411 tests (some skip without optional extras)
   test_core.py                          23
-  test_llm_policy.py                    14
+  test_llm_policy.py                    19
   test_bench.py                         22
-  test_mujoco_backend.py                10
-  test_v03_additions.py                 25
+  test_mujoco_backend.py                8
+  test_rt_safety_equivalence.py         2
+  test_v03_additions.py                 29
   test_v04_additions.py                 21
   test_v05_additions.py                 32
-  test_v06_additions.py                 37
+  test_v06_additions.py                 38
   test_v07_additions.py                 29
   test_v08_additions.py                 28
   test_v09_additions.py                 25
   test_v10_additions.py                 33
   test_v10_v1_additions.py              18
+  test_v102_additions.py                26
+  test_v110_additions.py                39
   test_profiles.py                      19
 
 assets/                                  brand mark + wordmark variants

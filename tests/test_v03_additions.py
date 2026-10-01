@@ -104,10 +104,11 @@ class TestForceCapGate:
         assert d.action.value == "deny"
         assert "torque=-5" in d.reason
 
-    def test_unparseable_value_skipped(self):
-        # Non-numeric force value silently passes (don't crash on weird input).
+    def test_unparseable_value_denied(self):
+        # Fail closed: a capped key whose value can't be read as a number is denied.
         d = self._check(ForceCapGate(force_max=10.0), {"force": "high"})
-        assert d.action.value == "allow"
+        assert d.action.value == "deny"
+        assert "not a number" in d.reason
 
 
 # ----------------------------------------------------------------------

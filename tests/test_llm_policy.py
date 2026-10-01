@@ -159,7 +159,27 @@ class TestLLMPolicy:
         assert intent.name == "teleport"
         assert "hallucinated" in intent.rationale.lower()
 
-    def test_observation_appears_as_tool_role_message(self):
+    def test_observation_answers_the_actual_tool_call_id(self):
+        policy = LLMPolicy(registry=_registry())
+        responses = [
+            _mock_chat_response("scan", {"radius": "0.5"}),
+            _mock_chat_response("done", {"reason": "ok"}),
+        ]
+        with patch("ghostloop.policies.llm.urllib.request.urlopen") as mock_urlopen:
+            def _next(*a, **k):
+                resp = MagicMock()
+                resp.read.return_value = json.dumps(responses.pop(0)).encode()
+                cm = MagicMock()
+                cm.__enter__.return_value = resp
+                return cm
+            mock_urlopen.side_effect = _next
+            policy.ask()
+            policy.ask({"position": [0, 0, 0]})
+        tool_msgs = [m for m in policy.messages if m["role"] == "tool"]
+        assert len(tool_msgs) == 1
+        assert tool_msgs[0]["tool_call_id"] == "call_1"
+
+    def test_observation_without_pending_call_is_a_user_message(self):
         policy = LLMPolicy(registry=_registry())
         with patch("ghostloop.policies.llm.urllib.request.urlopen") as mock_urlopen:
             mock_resp = MagicMock()
@@ -168,9 +188,27 @@ class TestLLMPolicy:
             ).encode()
             mock_urlopen.return_value.__enter__.return_value = mock_resp
             policy.ask({"position": [0, 0, 0]})
-        # Last user-role message before the assistant reply should carry the obs.
-        roles = [m["role"] for m in policy.messages]
-        assert "tool" in roles
+        assert not any(m["role"] == "tool" for m in policy.messages)
+
+    def test_usage_is_accumulated(self):
+        policy = LLMPolicy(registry=_registry(), config=LLMPolicyConfig(price_per_mtok=(1.0, 2.0)))
+        body = _mock_chat_response("done", {"reason": "ok"})
+        body["usage"] = {"prompt_tokens": 1000, "completion_tokens": 500}
+        with patch("ghostloop.policies.llm.urllib.request.urlopen") as mock_urlopen:
+            mock_resp = MagicMock()
+            mock_resp.read.return_value = json.dumps(body).encode()
+            mock_urlopen.return_value.__enter__.return_value = mock_resp
+            policy.ask()
+        assert policy.usage == {"input_tokens": 1000, "output_tokens": 500, "requests": 1}
+
+    def test_schema_types_and_optional_args(self):
+        from ghostloop.policies.llm import primitive_input_schema
+        schema = primitive_input_schema({"x": "float", "n": "int", "on": "bool",
+                                         "duration": "float (optional, default 1.0)"})
+        assert schema["properties"]["x"]["type"] == "number"
+        assert schema["properties"]["n"]["type"] == "integer"
+        assert schema["properties"]["on"]["type"] == "boolean"
+        assert set(schema["required"]) == {"x", "n", "on"}
 
     def test_http_error_raises_policy_error(self):
         import urllib.error

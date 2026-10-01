@@ -8,6 +8,8 @@ joint-space limits when those backends land."""
 
 from __future__ import annotations
 
+import math
+
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -37,9 +39,14 @@ class GeofenceGate:
         return None
 
     def check(self, intent: Intent, primitive: Primitive) -> Decision:
-        target = self._extract_target(intent.args)
+        try:
+            target = self._extract_target(intent.args)
+        except (TypeError, ValueError):
+            return Decision.deny(self.name, f"unparseable target in {intent.args!r}")
         if target is None:
             return Decision.allow(self.name, "no target coords in intent")
+        if not all(math.isfinite(v) for v in target):
+            return Decision.deny(self.name, f"non-finite target {target}")
         for axis, value, lo, hi in zip(
             ("x", "y", "z"),
             target,

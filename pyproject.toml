@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ghostloop"
-version = "1.0.3"
+version = "1.1.0"
 description = "The agent loop, embodied. A tool-using runtime + fail-closed safety pipeline + sim-first execution harness for embodied AI."
 readme = "README.md"
 license = "MIT"
@@ -28,10 +28,9 @@ classifiers = [
     "Topic :: System :: Hardware",
 ]
 
-# Core has zero runtime dependencies. Backends pull their own:
-#   pip install ghostloop[mujoco]   # MuJoCoBackend (v0.2 — shipped)
-#   pip install ghostloop[pybullet] # PyBulletBackend (v0.3 — planned)
-#   pip install ghostloop[ros2]     # ROS2Backend (v0.7 — planned)
+# Core has zero runtime dependencies. Backends and model adapters pull their own:
+#   pip install ghostloop[mujoco]     # MuJoCoBackend
+#   pip install ghostloop[anthropic]  # ClaudePolicy
 dependencies = []
 
 [project.optional-dependencies]
@@ -41,6 +40,7 @@ pybullet = ["pybullet>=3.2"]
 gym = ["gymnasium>=0.29"]
 ros2 = []  # rclpy is system-installed; this extra exists for documentation only.
 mcp = ["mcp>=1.0"]
+anthropic = ["anthropic>=1.0"]
 otel = [
     "opentelemetry-api>=1.20",
     "opentelemetry-sdk>=1.20",

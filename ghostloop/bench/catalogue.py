@@ -14,6 +14,8 @@ Suites included in v0.3:
 
 from __future__ import annotations
 
+import math
+import random
 from typing import Callable, Iterable
 
 from ..core import Intent, MockBackend
@@ -29,17 +31,44 @@ def _registry_factory():
     return [move_to(), scan(), pick(), place()]
 
 
+def _near(position, target, tolerance: float) -> bool:
+    if tolerance <= 0:
+        return tuple(position) == tuple(target)
+    return math.dist(position, target) <= tolerance
+
+
+def _jitter(
+    targets: list[tuple],
+    seed: int | None,
+    amount: float,
+    point_slots: tuple[int, ...] = (1,),
+) -> list[tuple]:
+    """Deterministically perturb the point fields of each target tuple."""
+    if seed is None or amount <= 0:
+        return targets
+    rng = random.Random(seed)
+    out = []
+    for row in targets:
+        row = list(row)
+        for slot in point_slots:
+            row[slot] = tuple(round(v + rng.uniform(-amount, amount), 6) for v in row[slot])
+        out.append(tuple(row))
+    return out
+
+
 def reach_targets(
     targets: Iterable[tuple[str, tuple[float, float, float]]],
+    tolerance: float = 0.0,
 ) -> list[Episode]:
-    """Suite: scripted move_to to each target, pass iff position == target."""
+    """Suite: scripted move_to to each target, pass iff the final position is
+    within ``tolerance`` of the target (exact match when ``tolerance`` is 0)."""
     out = []
     for name, t in targets:
         def _policy(_runtime, _t=t):
             return [Intent("move_to", {"x": _t[0], "y": _t[1], "z": _t[2]})]
 
         def _pred(_trace, state, _t=t):
-            return tuple(state["position"]) == _t
+            return _near(state["position"], _t, tolerance)
 
         out.append(Episode(
             name=name,
@@ -48,12 +77,14 @@ def reach_targets(
             policy=_policy,
             success_predicate=_pred,
             primitives=_registry_factory,
+            metadata={"suite": "reach", "target": list(t), "tolerance": tolerance},
         ))
     return out
 
 
 def pick_and_place_pairs(
     pairs: Iterable[tuple[str, str, tuple[float, float, float], tuple[float, float, float]]],
+    tolerance: float = 0.0,
 ) -> list[Episode]:
     """Suite: pick object_id at A, place at B. Pass iff backend.held_object is None
     AND backend.position == B at the end (the object got placed at B)."""
@@ -68,7 +99,7 @@ def pick_and_place_pairs(
             ]
 
         def _pred(_trace, state, _d=drop):
-            return state["held_object"] is None and tuple(state["position"]) == _d
+            return state.get("held_object") is None and _near(state["position"], _d, tolerance)
 
         out.append(Episode(
             name=name,
@@ -77,6 +108,8 @@ def pick_and_place_pairs(
             policy=_policy,
             success_predicate=_pred,
             primitives=_registry_factory,
+            metadata={"suite": "pick_and_place", "pickup": list(pickup), "drop": list(drop),
+                      "tolerance": tolerance},
         ))
     return out
 
@@ -116,6 +149,7 @@ def scan_at_targets(
 def geofence_violations(
     inside_targets: list[tuple[str, tuple[float, float, float]]],
     outside_targets: list[tuple[str, tuple[float, float, float]]],
+    tolerance: float = 0.0,
 ) -> list[Episode]:
     """Regression suite for the safety pipeline.
 
@@ -124,7 +158,7 @@ def geofence_violations(
     geofence, fail with geofence). Use this with paired_compare to confirm
     the gate is doing its job.
     """
-    return reach_targets(inside_targets) + reach_targets(outside_targets)
+    return reach_targets(inside_targets, tolerance) + reach_targets(outside_targets, tolerance)
 
 
 # ---------------------------------------------------------------------------
@@ -132,9 +166,13 @@ def geofence_violations(
 # ---------------------------------------------------------------------------
 
 
-def preset_reach_8() -> list[Episode]:
-    """8 reach targets spanning the workspace corners + axes."""
-    return reach_targets([
+def preset_reach_8(seed: int | None = None, tolerance: float = 0.0, jitter: float = 0.05) -> list[Episode]:
+    """8 reach targets spanning the workspace corners + axes.
+
+    With a ``seed``, each target is perturbed by up to ``jitter`` per axis
+    (deterministic for a given seed, so two backends see identical targets).
+    """
+    return _seeded(reach_targets(_jitter([
         (f"reach-{name}", t) for name, t in [
             ("origin", (0.0, 0.0, 0.0)),
             ("px", (0.5, 0.0, 0.0)),
@@ -145,31 +183,58 @@ def preset_reach_8() -> list[Episode]:
             ("corner-near", (0.4, 0.4, 0.4)),
             ("corner-far", (-0.4, -0.4, 0.4)),
         ]
-    ])
+    ], seed, jitter), tolerance), seed)
 
 
-def preset_pick_and_place_4() -> list[Episode]:
-    return pick_and_place_pairs([
+def preset_pick_and_place_4(seed: int | None = None, tolerance: float = 0.0, jitter: float = 0.05) -> list[Episode]:
+    return _seeded(pick_and_place_pairs(_jitter([
         ("widget-east-to-west", "widget-1", (0.4, 0.0, 0.1), (-0.4, 0.0, 0.1)),
         ("cup-up-to-down", "cup-1", (0.0, 0.0, 0.5), (0.0, 0.0, 0.0)),
         ("brick-corner-shuffle", "brick-1", (0.3, 0.3, 0.0), (-0.3, -0.3, 0.0)),
         ("ball-axis-flip", "ball-1", (0.5, 0.5, 0.5), (-0.5, -0.5, -0.5)),
-    ])
+    ], seed, jitter, point_slots=(2, 3)), tolerance), seed)
 
 
-def preset_geofence_smoke() -> list[Episode]:
+def preset_geofence_smoke(seed: int | None = None, tolerance: float = 0.0, jitter: float = 0.05) -> list[Episode]:
     """The 8-episode geofence regression suite used by examples/."""
-    return geofence_violations(
-        inside_targets=[
+    return _seeded(geofence_violations(
+        inside_targets=_jitter([
             ("inside-1", (0.3, 0.0, 0.0)),
             ("inside-2", (-0.5, 0.2, 0.1)),
             ("inside-3", (0.0, 0.7, 0.5)),
             ("inside-4", (0.4, -0.4, 0.2)),
-        ],
-        outside_targets=[
+        ], seed, jitter),
+        outside_targets=_jitter([
             ("outside-1", (5.0, 0.0, 0.0)),
             ("outside-2", (-3.0, 0.0, 0.0)),
             ("outside-3", (0.0, 9.0, 0.0)),
             ("outside-4", (0.0, 0.0, 12.0)),
-        ],
-    )
+        ], None if seed is None else seed + 1, jitter),
+        tolerance=tolerance,
+    ), seed)
+
+
+def preset_workspace_grid_27(seed: int | None = None, tolerance: float = 0.0, jitter: float = 0.05) -> list[Episode]:
+    """3x3x3 sweep of the canonical workspace at +-0.6: the reach-envelope stress test."""
+    levels = (-0.6, 0.0, 0.6)
+    grid = [
+        (f"grid-{i}{j}{k}", (levels[i], levels[j], levels[k]))
+        for i in range(3) for j in range(3) for k in range(3)
+    ]
+    return _seeded(reach_targets(_jitter(grid, seed, jitter), tolerance), seed)
+
+
+def _seeded(episodes: list[Episode], seed: int | None) -> list[Episode]:
+    if seed is not None:
+        for ep in episodes:
+            ep.metadata["seed"] = seed
+            ep.name = f"{ep.name}@s{seed}"
+    return episodes
+
+
+PRESETS: dict[str, Callable[..., list[Episode]]] = {
+    "reach_8": preset_reach_8,
+    "geofence_smoke": preset_geofence_smoke,
+    "pick_and_place_4": preset_pick_and_place_4,
+    "workspace_grid_27": preset_workspace_grid_27,
+}

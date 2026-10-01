@@ -83,3 +83,26 @@ def wilson_ci(successes: int, n: int, z: float = 1.96) -> tuple[float, float]:
 
 def summarize(results: list[EpisodeResult], run_name: str, bench_name: str) -> RunReport:
     return RunReport(run_name=run_name, bench_name=bench_name, results=results)
+
+
+def spend_summary(results: list) -> dict[str, Any]:
+    """Model spend for LLM-driven runs: total, per episode, and per completed task.
+
+    Cost per completed task is the number that matters when comparing agent
+    loops: a cheaper request that needs more turns or fails more often isn't cheaper.
+    """
+    costs = [r.extras.get("cost_usd") for r in results]
+    priced = [c for c in costs if c is not None]
+    passed = sum(1 for r in results if r.passed)
+    tokens_in = sum((r.extras.get("usage") or {}).get("input_tokens", 0) for r in results)
+    tokens_out = sum((r.extras.get("usage") or {}).get("output_tokens", 0) for r in results)
+    total = sum(priced) if priced and len(priced) == len(costs) else None
+    return {
+        "episodes": len(results),
+        "completed": passed,
+        "input_tokens": tokens_in,
+        "output_tokens": tokens_out,
+        "total_usd": total,
+        "usd_per_episode": total / len(results) if total is not None and results else None,
+        "usd_per_completed_task": total / passed if total is not None and passed else None,
+    }

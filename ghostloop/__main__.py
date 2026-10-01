@@ -2,8 +2,11 @@
 
 Subcommands:
   info               print version + available backends + registry primitives
+  backends           list registered backends, including installed plugins
   demo               run the bundled scripted pick-and-place demo
   bench              run a paired-comparison bench (default: geofence on/off)
+  eval               run one preset on one backend and report
+  xbench             run one preset on two backends and pair the results
   replay <path>      summarise a JSONL trace
 """
 
@@ -18,21 +21,103 @@ from . import __version__
 
 
 def cmd_info(_args: argparse.Namespace) -> int:
-    from .backends import mujoco_available, pybullet_available
-    from .core import MockBackend
     from .primitives import move_to, pick, place, scan
     print(f"ghostloop {__version__}")
     print()
     print("Backends:")
-    print(f"  MockBackend     always available")
-    print(f"  MuJoCoBackend   {'available' if mujoco_available() else 'not installed (pip install ghostloop[mujoco])'}")
-    print(f"  PyBulletBackend {'available' if pybullet_available() else 'not installed (pip install ghostloop[pybullet])'}")
+    _print_backends()
     print()
     print("Primitives (MockBackend bindings):")
     for prim in (move_to(), scan(), pick(), place()):
         args = ", ".join(f"{k}: {v}" for k, v in prim.arg_schema.items()) or "—"
         print(f"  {prim.name:<10} {prim.description}")
         print(f"             args: {args}")
+    return 0
+
+
+_INSTALL_HINTS = {
+    "mujoco": "pip install ghostloop[mujoco]",
+    "pybullet": "pip install ghostloop[pybullet]",
+    "gym": "pip install ghostloop[gym]",
+}
+
+
+def _print_backends() -> None:
+    from .backends import list_backends
+    for info in list_backends():
+        if info.available:
+            status = "available"
+        elif info.error:
+            status = f"failed to load: {info.error}"
+        else:
+            status = f"not installed ({_INSTALL_HINTS.get(info.name, 'see plugin docs')})"
+        print(f"  {info.name:<10} {status:<12} [{info.source}] {info.description}")
+
+
+def cmd_backends(_args: argparse.Namespace) -> int:
+    _print_backends()
+    return 0
+
+
+def _parse_kv(pairs: list[str] | None) -> dict:
+    out: dict = {}
+    for item in pairs or []:
+        key, sep, raw = item.partition("=")
+        if not sep:
+            raise SystemExit(f"expected key=value, got {item!r}")
+        try:
+            out[key] = json.loads(raw)
+        except json.JSONDecodeError:
+            out[key] = raw
+    return out
+
+
+def _gate_factory(name: str):
+    from .core import PolicyPipeline
+    from .policies import GeofenceGate
+    if name == "none":
+        return None
+    if name == "geofence":
+        return lambda: PolicyPipeline(gates=[GeofenceGate(min_corner=(-1, -1, -1), max_corner=(1, 1, 1))])
+    raise SystemExit(f"unknown gate set {name!r}")
+
+
+def cmd_xbench(args: argparse.Namespace) -> int:
+    from .bench.catalogue import PRESETS
+    from .bench.cross import cross_backend_compare
+    from .bench.frames import Workspace, workspace_for
+
+    workspace = None
+    if args.workspace:
+        if args.workspace in ("identity", "none"):
+            workspace = Workspace()
+        elif "," in args.workspace:
+            *center, scale = (float(v) for v in args.workspace.split(","))
+            workspace = Workspace(center=tuple(center), scale=scale)
+        else:
+            workspace = workspace_for(args.workspace)
+    report = cross_backend_compare(
+        PRESETS[args.preset],
+        args.a,
+        args.b,
+        seeds=args.seeds,
+        tolerance=args.tolerance,
+        pipeline_factory=_gate_factory(args.gates),
+        workspace=workspace,
+        a_kwargs=_parse_kv(args.a_arg),
+        b_kwargs=_parse_kv(args.b_arg),
+        preset_name=args.preset,
+    )
+    if args.out_dir:
+        out = report.write(args.out_dir)
+        s = report.stats
+        print(f"wrote {out}/report.md, report.json and {2 * len(report.pairs)} traces")
+        print(f"  {s.sim_label}: {s.sim_report.passed}/{s.sim_report.n}   "
+              f"{s.real_label}: {s.real_report.passed}/{s.real_report.n}   McNemar p={s.mcnemar_p:.4g}")
+    elif args.json:
+        print(json.dumps(report.to_json(), indent=2))
+    else:
+        print(report.render_md())
     return 0
 
 
@@ -126,6 +211,7 @@ def main(argv: list[str] | None = None) -> int:
     sub = p.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("info", help="Print version + available backends + primitives")
+    sub.add_parser("backends", help="List registered backends, including installed plugins")
     sub.add_parser("demo", help="Run the bundled pick-and-place demo")
     sub.add_parser("bench", help="Run the geofence-impact paired bench")
 
@@ -147,14 +233,32 @@ def main(argv: list[str] | None = None) -> int:
     mp = sub.add_parser("mcp", help="Run the MCP server (stdio transport for Claude Desktop / Cursor)")
     mp.add_argument("--name", default="ghostloop")
 
+    presets = ["geofence_smoke", "reach_8", "pick_and_place_4", "workspace_grid_27"]
     ep = sub.add_parser("eval", help="Run a built-in bench preset and write a Markdown report")
-    ep.add_argument("--preset", default="geofence_smoke",
-                    choices=["geofence_smoke", "reach_8", "pick_and_place_4"],
+    ep.add_argument("--preset", default="geofence_smoke", choices=presets,
                     help="Episode catalogue preset to evaluate.")
+    ep.add_argument("--backend", default="mock", help="Backend spec, e.g. mock or mujoco:ur5e.")
+    ep.add_argument("--seed", type=int, default=None, help="Seed for target jitter.")
+    ep.add_argument("--tolerance", type=float, default=None,
+                    help="Success radius in canonical units (default: exact on mock, 0.01 otherwise).")
     ep.add_argument("--with-geofence", action="store_true",
                     help="Apply a default GeofenceGate to every episode.")
     ep.add_argument("--out", type=Path, default=None,
                     help="Optional Markdown output path. Defaults to stdout.")
+
+    xp = sub.add_parser("xbench", help="Run one preset on two backends and pair the results")
+    xp.add_argument("--preset", default="reach_8", choices=presets)
+    xp.add_argument("--a", required=True, help="First backend spec, e.g. mujoco:ur5e")
+    xp.add_argument("--b", required=True, help="Second backend spec, e.g. omnisim:ur5e")
+    xp.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
+    xp.add_argument("--tolerance", type=float, default=0.01, help="Success radius, canonical units.")
+    xp.add_argument("--gates", default="none", choices=["none", "geofence"])
+    xp.add_argument("--workspace", default=None,
+                    help="Override the shared workspace: an embodiment name, 'identity', or cx,cy,cz,scale.")
+    xp.add_argument("--a-arg", action="append", metavar="KEY=VALUE", help="Extra kwarg for backend A.")
+    xp.add_argument("--b-arg", action="append", metavar="KEY=VALUE", help="Extra kwarg for backend B.")
+    xp.add_argument("--out-dir", type=Path, default=None, help="Write report.md, report.json and traces here.")
+    xp.add_argument("--json", action="store_true", help="Print the JSON report instead of Markdown.")
 
     dp = sub.add_parser("diff", help="Diff two trace JSONL files step by step")
     dp.add_argument("a", type=Path, help="First trace path")
@@ -164,6 +268,8 @@ def main(argv: list[str] | None = None) -> int:
     args = p.parse_args(argv)
     handlers = {
         "info": cmd_info,
+        "backends": cmd_backends,
+        "xbench": cmd_xbench,
         "demo": cmd_demo,
         "bench": cmd_bench,
         "replay": cmd_replay,
@@ -176,22 +282,18 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def cmd_eval(args: argparse.Namespace) -> int:
-    from .bench import (
-        EpisodeRunner,
-        preset_geofence_smoke,
-        preset_pick_and_place_4,
-        preset_reach_8,
-        summarize,
-    )
+    from .bench import EpisodeRunner, summarize
+    from .bench.catalogue import PRESETS
+    from .bench.cross import bind_episodes
     from .core import PolicyPipeline
     from .policies import GeofenceGate
 
-    presets = {
-        "geofence_smoke": preset_geofence_smoke,
-        "reach_8": preset_reach_8,
-        "pick_and_place_4": preset_pick_and_place_4,
-    }
-    eps = presets[args.preset]()
+    tolerance = args.tolerance
+    if tolerance is None:
+        tolerance = 0.0 if args.backend == "mock" else 0.01
+    eps = PRESETS[args.preset](seed=args.seed, tolerance=tolerance)
+    if args.backend != "mock":
+        eps, _ = bind_episodes(eps, args.backend)
     if args.with_geofence:
         fence = PolicyPipeline(gates=[
             GeofenceGate(min_corner=(-1, -1, -1), max_corner=(1, 1, 1)),
@@ -201,7 +303,7 @@ def cmd_eval(args: argparse.Namespace) -> int:
     results = EpisodeRunner().run_all(eps)
     rep = summarize(
         results,
-        run_name="cli_eval" + ("+fence" if args.with_geofence else ""),
+        run_name=args.backend + ("+fence" if args.with_geofence else ""),
         bench_name=args.preset,
     )
     md = rep.render_md()

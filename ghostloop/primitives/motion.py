@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import math
+
 from ..core import MockBackend, Primitive, Result, ResultStatus
 
 
 def _move_to_call(backend: MockBackend, x: float, y: float, z: float) -> Result:
     old = backend.position
     new = (float(x), float(y), float(z))
+    if not all(math.isfinite(v) for v in new):
+        return Result(status=ResultStatus.ERROR, message=f"non-finite target {new}")
     backend.position = new
     distance = sum((a - b) ** 2 for a, b in zip(new, old)) ** 0.5
     return Result(
