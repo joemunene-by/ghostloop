@@ -114,7 +114,7 @@ class CrossBackendReport:
         a, b = self.stats.sim_label, self.stats.real_label
         div = self.divergence_summary()
         stats_md = self.stats.render_md().rstrip().replace(
-            f"# Sim-to-Real Bench — {a} vs {b}", f"# Cross-backend bench: {a} vs {b}", 1,
+            f"# Sim-to-Real Bench, {a} vs {b}", f"# Cross-backend bench: {a} vs {b}", 1,
         ).replace("**Transfer gap**", "**Pass-rate gap**", 1)
         lines = [stats_md, ""]
         lines.append("## Final-position divergence")

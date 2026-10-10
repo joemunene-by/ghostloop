@@ -5,7 +5,7 @@ time the runtime they're attached to emits a TraceEvent. Each robot's
 runtime can register an emitter; the StreamManager fans events out to
 every connected websocket subscriber.
 
-Conditional — only available when fastapi is installed (same dep as
+Conditional, only available when fastapi is installed (same dep as
 the dashboard module). The runtime side has zero new deps; emitting an
 event into a StreamManager just calls ``manager.publish()``.
 """
@@ -66,7 +66,7 @@ def attach_streaming(app, manager: StreamManager) -> None:
     """Register the /ws/v1/stream WebSocket endpoint on a FastAPI app.
 
     Raises ImportError if fastapi isn't installed (no-op at install
-    time — only the call site fails, which keeps the runtime a no-fastapi
+    time, only the call site fails, which keeps the runtime a no-fastapi
     dependency).
     """
     try:

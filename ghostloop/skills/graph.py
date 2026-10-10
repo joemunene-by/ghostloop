@@ -1,4 +1,4 @@
-"""SkillGraph — typed DAG over Primitives + composite primitives.
+"""SkillGraph, typed DAG over Primitives + composite primitives.
 
 Used for:
 
@@ -189,7 +189,7 @@ class SkillGraph:
         for name in order:
             s = self.skills[name]
             prereq = ", ".join(s.prerequisites) if s.prerequisites else "(none)"
-            refine = f" — refines `{s.refines}`" if s.refines else ""
-            desc = f" — {s.description}" if s.description else ""
+            refine = f", refines `{s.refines}`" if s.refines else ""
+            desc = f", {s.description}" if s.description else ""
             lines.append(f"- **{name}**: prereqs={prereq}{refine}{desc}")
         return "\n".join(lines) + "\n"

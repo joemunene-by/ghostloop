@@ -1,19 +1,19 @@
-"""Real-time deadline scheduler — detect missed deadlines in the agent loop.
+"""Real-time deadline scheduler, detect missed deadlines in the agent loop.
 
 Robotics control loops have hard timing requirements: a 100 Hz arm
 controller can't pause for 50ms while an LLM thinks. The v0.3
 ``AsyncRuntime`` provides rate-Hz pacing but no detection of missed
-deadlines — a loop that lags doesn't know it's lagging.
+deadlines, a loop that lags doesn't know it's lagging.
 
 This module adds:
 
-  - ``DeadlineMonitor`` — observes step timestamps, computes the period
+  - ``DeadlineMonitor``, observes step timestamps, computes the period
     between them, and emits a violation when the period exceeds a
     configurable threshold. Tracks rolling jitter (std of period
     around the target) so the operator can dashboard timing health.
-  - ``DeadlineMissed`` — typed event the monitor produces. Hooks into
+  - ``DeadlineMissed``, typed event the monitor produces. Hooks into
     the existing trace + alarm infrastructure.
-  - ``deadline_gate(monitor)`` — a PolicyGate factory that DENIES the
+  - ``deadline_gate(monitor)``, a PolicyGate factory that DENIES the
     next intent if the loop is currently in a deadline-violated state.
     Use this to escalate to a safe-fallback policy when timing tanks.
 
@@ -177,7 +177,7 @@ class DeadlineGate:
         monitor: a shared ``DeadlineMonitor`` that the outer control
             loop also calls ``observe()`` on.
         max_consecutive: gate denies once this many consecutive misses
-            have happened. Default 3 — single transient slow steps
+            have happened. Default 3, single transient slow steps
             don't trigger.
         denied_message: included in the deny reason for trace clarity.
     """
@@ -197,7 +197,7 @@ class DeadlineGate:
         detail = ""
         if last is not None:
             detail = (
-                f" — last actual_period={last.actual_period_s:.3g}s "
+                f", last actual_period={last.actual_period_s:.3g}s "
                 f"expected={last.expected_period_s:.3g}s "
                 f"overrun={last.overrun_ratio:.2f}x"
             )

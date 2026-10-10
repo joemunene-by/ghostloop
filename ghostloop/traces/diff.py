@@ -1,7 +1,7 @@
 """Trace diff: side-by-side comparison of two traces.
 
 Operates on the structured ReplayedEvent stream from replay.load_trace.
-The diff is sequential — step N of trace A is compared to step N of
+The diff is sequential, step N of trace A is compared to step N of
 trace B. Three categories per step:
 
   identical          same intent, same args, same result status
@@ -103,14 +103,14 @@ class TraceDiff:
             "|---:|---|---|---|---|",
         ]
         for s in self.steps:
-            a_desc = f"{s.a.intent_name}({s.a.intent_args}) -> {s.a.result_status}" if s.a else "—"
-            b_desc = f"{s.b.intent_name}({s.b.intent_args}) -> {s.b.result_status}" if s.b else "—"
+            a_desc = f"{s.a.intent_name}({s.a.intent_args}) -> {s.a.result_status}" if s.a else ", "
+            b_desc = f"{s.b.intent_name}({s.b.intent_args}) -> {s.b.result_status}" if s.b else ", "
             reason = "; ".join(s.reasons) or ""
             marker = {
-                "identical": "✓",
+                "identical": " ",
                 "diverged": "≠",
-                "only_a": "←",
-                "only_b": "→",
+                "only_a": " ",
+                "only_b": " to ",
             }[s.kind]
             lines.append(f"| {s.step} | {marker} {s.kind} | {a_desc} | {b_desc} | {reason} |")
         return "\n".join(lines) + "\n"

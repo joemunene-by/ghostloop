@@ -8,15 +8,15 @@ because ghostloop's typed Trace makes the data-collection side trivial.
 
 Three components:
 
-  - ``DistillationDataset`` — collects (state_before, intent) pairs
+  - ``DistillationDataset``, collects (state_before, intent) pairs
     from a list of Rollout objects (or from raw Traces). Filters to
     only keep events whose decision was ALLOW so the student doesn't
     learn from blocked actions. Optional include_denied flag for users
     who want to teach the student to *anticipate* denials.
-  - ``StudentPolicy`` Protocol — same shape as PolicyAdapter from the
+  - ``StudentPolicy`` Protocol, same shape as PolicyAdapter from the
     safe-RL harness. Plug in PyTorch / JAX / a from-scratch numpy MLP /
-    a small VLA head — anything with ``act(obs)`` + ``update(batch)``.
-  - ``train_distill(...)`` — the outer loop. Iterates over the dataset
+    a small VLA head, anything with ``act(obs)`` + ``update(batch)``.
+  - ``train_distill(...)``, the outer loop. Iterates over the dataset
     in batches, calls ``student.update(batch)`` per batch, optionally
     runs a held-out eval rollout every N iterations.
 
@@ -200,8 +200,8 @@ class StudentPolicy(Protocol):
     The framework is yours: PyTorch nn.Module, JAX flax model, scripted
     nearest-neighbour, even a tabular policy. The contract is:
 
-      ``act(state)`` — given a state, return an Intent.
-      ``update(batch)`` — given a batch of DistillationSamples, do one
+      ``act(state)``, given a state, return an Intent.
+      ``update(batch)``, given a batch of DistillationSamples, do one
         gradient / regression / fitting step. Return a metrics dict.
     """
 

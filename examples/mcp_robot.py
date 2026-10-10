@@ -1,4 +1,4 @@
-"""MCP server for any robot — pick a profile or load your own YAML.
+"""MCP server for any robot, pick a profile or load your own YAML.
 
 This is the general-purpose entry point that supersedes the arm-only
 ``claude_desktop_mcp_arm.py``. Pick what you control via env vars:

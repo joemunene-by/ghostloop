@@ -71,7 +71,7 @@ class TestDeprojectDepth:
             name="t", timestamp=0.0, intrinsics=intr,
             depth=[[1.0, 2.0], [3.0, 4.0]],
         )
-        # Don't import numpy in this test path — call directly.
+        # Don't import numpy in this test path, call directly.
         from ghostloop.sensors.perception import _deproject_pure
         fused = _deproject_pure(frame, valid_min=1e-3, valid_max=10.0)
         # Pure-python fused.points is a flat list of (x, y, z) tuples.

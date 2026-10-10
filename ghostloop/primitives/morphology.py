@@ -1,4 +1,4 @@
-"""Cross-embodiment primitive library — same skill name, different robot.
+"""Cross-embodiment primitive library, same skill name, different robot.
 
 In ghostloop a Primitive is a backend-bound callable. That works
 great for one robot, but a real fleet has many: Franka Panda + UR5e
@@ -18,7 +18,7 @@ and produces the appropriate Primitive at build time:
     primitives = reg.build("franka", ["move_to", "pick", "place"])
 
 Same downstream code, different robots. Pairs with the SkillGraph from
-v0.10 — the SAME skill graph (with prereqs and refines edges) drives
+v0.10, the SAME skill graph (with prereqs and refines edges) drives
 every morphology.
 
 Pure stdlib.

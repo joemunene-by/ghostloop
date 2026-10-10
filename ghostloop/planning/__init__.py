@@ -7,8 +7,8 @@ the full Intent sequence up front. The runtime then executes that
 sequence under the safety pipeline like any scripted policy.
 
 Two planners ship in v0.5:
-  PickAndPlacePlanner — emits scan -> move -> pick -> move -> place
-  TraversePlanner     — emits move_to per waypoint
+  PickAndPlacePlanner, emits scan -> move -> pick -> move -> place
+  TraversePlanner, emits move_to per waypoint
 
 Custom planners drop in alongside via the ``Planner`` Protocol.
 """

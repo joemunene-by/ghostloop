@@ -2,12 +2,12 @@
 
 Two concrete approval modes ship in v0.3:
 
-  AlwaysAllow / AlwaysDeny — for tests + dry runs.
-  CallableApprover — wrap any synchronous predicate ``(intent, primitive) -> bool``.
+  AlwaysAllow / AlwaysDeny, for tests + dry runs.
+  CallableApprover, wrap any synchronous predicate ``(intent, primitive) -> bool``.
                       Common patterns: a CLI prompt, a Slack webhook, a
                       Next.js dashboard polling a queue.
 
-The gate only applies HITL to a configurable set of primitive names — so
+The gate only applies HITL to a configurable set of primitive names, so
 ``observe`` flows freely while ``open_gripper`` requires sign-off."""
 
 from __future__ import annotations
@@ -67,13 +67,13 @@ def always_deny(intent: Intent, primitive: Primitive) -> bool:
 
 
 def cli_approver(intent: Intent, primitive: Primitive) -> bool:
-    """Synchronous CLI prompt approver — blocks the runtime on stdin.
+    """Synchronous CLI prompt approver, blocks the runtime on stdin.
 
     For interactive development. Production deployments will plug a
     Slack-webhook or dashboard-poller into ``HumanInTheLoopGate.approver``.
     """
     print(
-        f"[hitl] {primitive.name}({intent.args}) — rationale: {intent.rationale!r}",
+        f"[hitl] {primitive.name}({intent.args}), rationale: {intent.rationale!r}",
         flush=True,
     )
     while True:

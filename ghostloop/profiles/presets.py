@@ -1,6 +1,6 @@
 """Preset RobotProfiles for common robots.
 
-Hand-curated. Edit copies of these for your specific hardware — they're
+Hand-curated. Edit copies of these for your specific hardware, they're
 intentionally conservative on workspace + force + velocity so first
 runs don't break things.
 """
@@ -33,7 +33,7 @@ def franka_arm() -> RobotProfile:
 
 
 def turtlebot_base() -> RobotProfile:
-    """TurtleBot 3 / 4 — wheeled mobile base."""
+    """TurtleBot 3 / 4, wheeled mobile base."""
     return RobotProfile(
         name="turtlebot",
         morphology="mobile_base",
@@ -54,7 +54,7 @@ def turtlebot_base() -> RobotProfile:
 
 
 def spot_quadruped() -> RobotProfile:
-    """Boston Dynamics Spot — quadruped mobile platform."""
+    """Boston Dynamics Spot, quadruped mobile platform."""
     return RobotProfile(
         name="spot",
         morphology="quadruped",
@@ -83,7 +83,7 @@ def tello_drone() -> RobotProfile:
         instructions=(
             "You control a small indoor quadcopter. Always takeoff before "
             "fly_to. NEVER exceed 2m altitude indoors. On any uncertainty, "
-            "land. Battery below 20% triggers automatic land — read battery "
+            "land. Battery below 20% triggers automatic land, read battery "
             "with read_battery before fly_to."
         ),
         workspace_bounds=((-3.0, -3.0, 0.0), (3.0, 3.0, 2.0)),
@@ -95,7 +95,7 @@ def tello_drone() -> RobotProfile:
 
 
 def stretch_mobile_arm() -> RobotProfile:
-    """Hello Robot Stretch RE3 — mobile base + telescoping arm."""
+    """Hello Robot Stretch RE3, mobile base + telescoping arm."""
     return RobotProfile(
         name="stretch",
         morphology="mobile_arm",
@@ -117,7 +117,7 @@ def stretch_mobile_arm() -> RobotProfile:
 
 
 def humanoid_demo() -> RobotProfile:
-    """Generic humanoid — wave / look / point / nod, no locomotion."""
+    """Generic humanoid, wave / look / point / nod, no locomotion."""
     return RobotProfile(
         name="humanoid_demo",
         morphology="humanoid",

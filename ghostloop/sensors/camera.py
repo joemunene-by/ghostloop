@@ -44,7 +44,7 @@ class CameraFrame:
     """One snapshot from a Camera.
 
     ``rgb`` and ``depth`` are intentionally typed as ``Any`` so backends
-    can return numpy arrays, PIL Images, or raw bytes — whatever native
+    can return numpy arrays, PIL Images, or raw bytes, whatever native
     type the underlying renderer produces. Downstream CameraProcessors
     are responsible for normalising. The metadata fields below ARE
     canonical and JSON-serialisable so the trace can record them safely.
@@ -80,7 +80,7 @@ class Camera(Protocol):
 
 
 class CameraProcessor(Protocol):
-    """A pluggable post-processor — object detector, depth refiner, etc.
+    """A pluggable post-processor, object detector, depth refiner, etc.
 
     Implementations transform a CameraFrame into a structured observation
     dict (label, bbox, pose, ...). Stays out-of-band from the runtime so
@@ -96,7 +96,7 @@ class CameraProcessor(Protocol):
 class MockCamera:
     """In-memory deterministic camera for tests + sim demos.
 
-    Generates a tiny 'gradient' RGB block (no numpy dep — a 2D list of
+    Generates a tiny 'gradient' RGB block (no numpy dep, a 2D list of
     (r,g,b) tuples) plus a constant depth field, so downstream code that
     expects rgb_shape / depth_shape can validate without a real renderer.
     """
@@ -140,7 +140,7 @@ def _capture_camera_call(backend: Backend, camera: str = "default") -> Result:
     """Look up ``camera`` on backend.cameras (or backend.cameras[default]) and capture.
 
     Falls back to a MockCamera-with-mock-detections when the backend has
-    no cameras configured — keeps demos / tests usable without sim setup.
+    no cameras configured, keeps demos / tests usable without sim setup.
     """
     cameras = getattr(backend, "cameras", None)
     cam: Camera | None = None
@@ -163,7 +163,7 @@ def _capture_camera_call(backend: Backend, camera: str = "default") -> Result:
 
 
 def capture_camera() -> Primitive:
-    """``capture_camera(camera="default")`` — sensor primitive for any backend
+    """``capture_camera(camera="default")``, sensor primitive for any backend
     that exposes a ``cameras: dict[str, Camera]`` attribute. Returns frame
     metadata (dimensions, intrinsics, timestamp, detections from extras)
     in the observation; the opaque RGB/depth payload lives on the frame

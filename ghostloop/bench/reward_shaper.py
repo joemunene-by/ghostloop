@@ -3,7 +3,7 @@
 Hand-authored reward functions inside primitive ``call`` bodies are
 hard to compose, hard to reason about, and bury the actual reward
 shape in glue code. ``RewardShaper`` lets you declare reward as a list
-of typed components — each fires when its predicate matches, adding
+of typed components, each fires when its predicate matches, adding
 its own contribution. The total reward for a step is the sum of every
 matching component's value.
 
@@ -19,7 +19,7 @@ Example:
 
     reward = shaper.score(intent, decision, result)
 
-Composes with ``train_safe`` from the v0.8 training harness — the
+Composes with ``train_safe`` from the v0.8 training harness, the
 collector's ``reward_fn`` argument can be ``shaper.score_event``.
 Stdlib only.
 """
@@ -124,7 +124,7 @@ class CustomReward(RewardComponent):
 class RewardShaper:
     """Compose a list of reward components. Total = sum of all matching components.
 
-    Components are evaluated independently — multiple can fire on the
+    Components are evaluated independently, multiple can fire on the
     same step (e.g. StepCost + OnPrimitive + OnObservation all
     contributing). The order doesn't affect the total but is preserved
     for the per-component breakdown returned by ``score_with_breakdown``.

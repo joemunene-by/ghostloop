@@ -56,7 +56,7 @@ def scan() -> Primitive:
     """Read the workspace within ``radius`` of the current pose.
 
     Mock returns an empty detection list. Real backends fuse depth + RGB into
-    structured detections (label, bbox, pose) — the schema is a list of
+    structured detections (label, bbox, pose), the schema is a list of
     dicts so adding fields later is non-breaking.
     """
     return Primitive(

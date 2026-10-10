@@ -7,7 +7,7 @@ The data flow per step:
   the Primitive  ->  Runtime appends a TraceEvent.
 
 Everything is JSON-serialisable so episodes can be persisted, replayed, or
-shipped to a fleet dashboard. There is no global state — pass a Runtime around.
+shipped to a fleet dashboard. There is no global state, pass a Runtime around.
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ from typing import Any, Callable, Iterable, Protocol
 
 
 # ---------------------------------------------------------------------------
-# Intent — what a policy says it wants the robot to do.
+# Intent, what a policy says it wants the robot to do.
 # ---------------------------------------------------------------------------
 
 
@@ -33,7 +33,7 @@ class Intent:
     The ``name`` is looked up in a PrimitiveRegistry. ``args`` is whatever
     keyword arguments the resolved Primitive accepts. ``rationale`` is the
     free-text explanation the policy emitted (useful for traces, audits,
-    and replay) — empty string is fine if the policy doesn't produce one.
+    and replay), empty string is fine if the policy doesn't produce one.
     """
 
     name: str
@@ -45,7 +45,7 @@ class Intent:
 
 
 # ---------------------------------------------------------------------------
-# Primitive — a backend-bound action.
+# Primitive, a backend-bound action.
 # ---------------------------------------------------------------------------
 
 
@@ -91,7 +91,7 @@ class PrimitiveRegistry:
 
 
 # ---------------------------------------------------------------------------
-# Result — what executing a Primitive returns.
+# Result, what executing a Primitive returns.
 # ---------------------------------------------------------------------------
 
 
@@ -125,7 +125,7 @@ class Result:
 
 
 # ---------------------------------------------------------------------------
-# PolicyGate / PolicyPipeline — fail-closed safety pipeline.
+# PolicyGate / PolicyPipeline, fail-closed safety pipeline.
 # ---------------------------------------------------------------------------
 
 
@@ -167,7 +167,7 @@ class PolicyGate(Protocol):
     """A single safety check.
 
     Implementations receive the Intent + Primitive and return a Decision.
-    Gates should be cheap and side-effect-free where possible — they run
+    Gates should be cheap and side-effect-free where possible, they run
     on every step. Examples that ship in v0.1: rate limit, per-primitive
     deny-list, geofence (when 3D arg detected).
     """
@@ -243,7 +243,7 @@ class PolicyPipeline:
 
 
 # ---------------------------------------------------------------------------
-# Backend — execution adapter.
+# Backend, execution adapter.
 # ---------------------------------------------------------------------------
 
 
@@ -252,7 +252,7 @@ class Backend(Protocol):
 
     The minimum surface is just (a) a name, and (b) a state snapshot for
     traces. Primitives close over a specific Backend instance via their
-    ``call`` callable, so this Protocol stays deliberately small — backends
+    ``call`` callable, so this Protocol stays deliberately small, backends
     don't have to know what primitives exist. v0.1 ships MockBackend; the
     next backends to land are MuJoCoBackend (sim) and PyBulletBackend.
     """
@@ -285,7 +285,7 @@ class MockBackend:
 
 
 # ---------------------------------------------------------------------------
-# Trace — JSON-serialisable per-episode event log.
+# Trace, JSON-serialisable per-episode event log.
 # ---------------------------------------------------------------------------
 
 
@@ -348,7 +348,7 @@ class Trace:
 
 
 # ---------------------------------------------------------------------------
-# Runtime — orchestrator.
+# Runtime, orchestrator.
 # ---------------------------------------------------------------------------
 
 

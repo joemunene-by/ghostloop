@@ -1,4 +1,4 @@
-"""Robot profiles — declarative spec of a specific robot's capabilities.
+"""Robot profiles, declarative spec of a specific robot's capabilities.
 
 A ``RobotProfile`` carries everything ghostloop needs to bring a robot
 online: its name, its morphology, the primitives it supports, its

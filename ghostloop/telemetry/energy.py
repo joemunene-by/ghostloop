@@ -1,4 +1,4 @@
-"""Energy ledger — joules-per-primitive accounting over a Trace.
+"""Energy ledger, joules-per-primitive accounting over a Trace.
 
 Real deployments care about energy. A nightly inspection robot that
 drains its battery in 4 hours is useless; one that lasts 14 hours
@@ -12,7 +12,7 @@ call consume? The estimator can be:
   - constant (a fixed J per call, e.g. "scan = 0.5 J")
   - linear in a numeric arg (e.g. move_to consumes ``k * |delta|``)
   - linear in duration (e.g. continuous-running primitives)
-  - whatever closure you want — the API is just a callable
+  - whatever closure you want, the API is just a callable
 
 ``EnergyEstimator`` aggregates models and assigns a fallback value
 to unmodelled primitives. ``EnergyLedger`` walks a Trace and produces
@@ -22,7 +22,7 @@ Useful pairings:
   - Sim2RealBench: compare energy budgets sim-vs-real.
   - Property mining: emit "episode never exceeds X joules" candidates.
   - Reward shaping: use total energy as a negative reward term for
-    energy-aware RL (RewardShaper has CustomReward — adapt).
+    energy-aware RL (RewardShaper has CustomReward, adapt).
 
 Pure stdlib.
 """
@@ -190,7 +190,7 @@ class EnergyLedger:
         total = self.total(trace)
         breakdown = self.by_primitive(trace)
         lines = [
-            f"# Energy ledger — episode `{trace.episode_id}`",
+            f"# Energy ledger, episode `{trace.episode_id}`",
             "",
             f"- Total: **{total:.4g} J**",
             f"- Events counted: {sum(1 for e in trace.events if e.decision.action.value == 'allow')}",

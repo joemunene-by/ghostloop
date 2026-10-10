@@ -29,7 +29,7 @@ def cmd_info(_args: argparse.Namespace) -> int:
     print()
     print("Primitives (MockBackend bindings):")
     for prim in (move_to(), scan(), pick(), place()):
-        args = ", ".join(f"{k}: {v}" for k, v in prim.arg_schema.items()) or "—"
+        args = ", ".join(f"{k}: {v}" for k, v in prim.arg_schema.items()) or ", "
         print(f"  {prim.name:<10} {prim.description}")
         print(f"             args: {args}")
     return 0
@@ -205,7 +205,7 @@ def cmd_replay(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(
         prog="python -m ghostloop",
-        description="ghostloop — the agent loop, embodied.",
+        description="ghostloop, the agent loop, embodied.",
     )
     p.add_argument("--version", action="version", version=f"ghostloop {__version__}")
     sub = p.add_subparsers(dest="cmd", required=True)

@@ -26,7 +26,7 @@ from ..primitives.manipulation import pick, place
 
 
 # ---------------------------------------------------------------------------
-# Safety gate spec — declarative form for YAML.
+# Safety gate spec, declarative form for YAML.
 # ---------------------------------------------------------------------------
 
 
@@ -295,7 +295,7 @@ def _load_custom_primitives(modules: list[str]) -> list:
             factory = getattr(module, factory_name.strip())
             out.append(factory())
         except Exception as exc:  # noqa: BLE001
-            # Don't crash boot for one bad custom primitive — record it.
+            # Don't crash boot for one bad custom primitive, record it.
             import sys as _sys
             print(
                 f"[ghostloop] failed to load custom primitive {spec!r}: "
@@ -368,7 +368,7 @@ def build_runtime_from_profile(
 ) -> Runtime:
     """Materialise a Runtime from a RobotProfile.
 
-    ``backend`` overrides the profile's backend if supplied — useful
+    ``backend`` overrides the profile's backend if supplied, useful
     for unit tests where you want to swap in MockBackend regardless of
     what the YAML declared.
     """

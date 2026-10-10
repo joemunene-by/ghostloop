@@ -1,6 +1,6 @@
 """Tests for ghostloop.backends.mujoco.
 
-Most tests run *without* mujoco installed — they verify the conditional
+Most tests run *without* mujoco installed, they verify the conditional
 import + helpful error message. Live integration is gated on mujoco being
 importable, so the offline test path stays at zero install cost.
 """

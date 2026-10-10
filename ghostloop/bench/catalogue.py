@@ -5,10 +5,10 @@ in initial state / target / object. This is the equivalent of GhostBench's
 12 differentiation bets in GhostLM, transposed to robot tasks.
 
 Suites included in v0.3:
-  reach_targets        — move to N points, pass iff position == target
-  pick_and_place_pairs — pick object A, drop at location B
-  scan_at_targets      — visit waypoints and call scan, score for coverage
-  geofence_violations  — half-inside, half-outside (regression suite for
+  reach_targets, move to N points, pass iff position == target
+  pick_and_place_pairs, pick object A, drop at location B
+  scan_at_targets, visit waypoints and call scan, score for coverage
+  geofence_violations, half-inside, half-outside (regression suite for
                          the safety pipeline)
 """
 
@@ -162,7 +162,7 @@ def geofence_violations(
 
 
 # ---------------------------------------------------------------------------
-# Convenience presets — handy default fixtures for quick demos / smoke tests.
+# Convenience presets, handy default fixtures for quick demos / smoke tests.
 # ---------------------------------------------------------------------------
 
 

@@ -1,6 +1,6 @@
 """ObservationBuffer: short-term memory exposed to policies.
 
-Policies often need more than the current backend snapshot — they need
+Policies often need more than the current backend snapshot, they need
 recency: "what was the last thing I observed", "did this primitive
 succeed last time", "have I tried this target before". The runtime
 records every step in the trace already, but trace iteration on every

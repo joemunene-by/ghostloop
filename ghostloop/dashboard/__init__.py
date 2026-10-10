@@ -4,7 +4,7 @@ Read-only HTTP surface over the SQLite store + an optional FleetRegistry
 attached to the same process. Designed as the data layer for a Next.js
 + tRPC dashboard (matching the broader ghostloop ecosystem stack).
 
-Conditional import — package itself doesn't depend on fastapi:
+Conditional import, package itself doesn't depend on fastapi:
 
   pip install ghostloop[dashboard]
 

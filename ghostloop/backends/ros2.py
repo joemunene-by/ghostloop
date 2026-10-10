@@ -1,4 +1,4 @@
-"""ROS2Backend — DDS-based real-hardware backend via rclpy.
+"""ROS2Backend, DDS-based real-hardware backend via rclpy.
 
 Real robots speak ROS 2 in 2026. Most arms / mobile bases / drones
 ship with a ROS 2 driver that exposes joint-state subscribers,
@@ -7,7 +7,7 @@ ROS2Backend bridges the ghostloop runtime to that ecosystem so the
 same agent loop, safety pipeline, and trace recorder that drove the
 sim now drives a physical robot.
 
-Conditional import — rclpy is heavy and platform-specific. The
+Conditional import, rclpy is heavy and platform-specific. The
 package itself imports cleanly without ROS 2 installed; constructing
 the backend raises ImportError with the install hint:
 
@@ -27,7 +27,7 @@ Then:
 The backend spins a single rclpy node on a daemon thread; calls to
 ``publish_twist`` / ``set_joints`` enqueue ROS messages, and
 ``snapshot()`` returns the latest observation cached from the
-subscriber callbacks. Subscriptions degrade gracefully — if no
+subscriber callbacks. Subscriptions degrade gracefully, if no
 message has arrived yet, the snapshot returns sentinel "stale" flags.
 """
 
@@ -124,7 +124,7 @@ class ROS2Backend:
         self._spinner.start()
 
     # ------------------------------------------------------------------
-    # Subscriber callbacks — cache the latest message into a plain dict.
+    # Subscriber callbacks, cache the latest message into a plain dict.
     # ------------------------------------------------------------------
 
     def _on_odom(self, msg: Any) -> None:
@@ -201,7 +201,7 @@ class ROS2Backend:
         return snap
 
     # ------------------------------------------------------------------
-    # Action helpers — primitives call these.
+    # Action helpers, primitives call these.
     # ------------------------------------------------------------------
 
     def publish_twist(
@@ -228,7 +228,7 @@ class ROS2Backend:
     def shutdown(self) -> None:
         """Stop the spinner, destroy the node, and shutdown rclpy.
 
-        Idempotent — call from your ``finally`` block to avoid leaving
+        Idempotent, call from your ``finally`` block to avoid leaving
         ROS resources around on test exits.
         """
         self._stop.set()

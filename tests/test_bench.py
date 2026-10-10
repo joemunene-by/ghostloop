@@ -1,4 +1,4 @@
-"""Tests for ghostloop.bench — Wilson CIs, McNemar, episode runner, paired compare."""
+"""Tests for ghostloop.bench, Wilson CIs, McNemar, episode runner, paired compare."""
 
 import math
 import sys
@@ -213,7 +213,7 @@ class TestPairedCompare:
         assert not comp.significant
 
     def test_complete_dominance_yields_significance(self):
-        # A passes 0/8, B passes 8/8 — maximally discordant.
+        # A passes 0/8, B passes 8/8, maximally discordant.
         eps_a = [_move_episode(f"e{i}", (5.0, 0.0, 0.0)) for i in range(8)]
         a_res = _scripted_run(
             eps_a,

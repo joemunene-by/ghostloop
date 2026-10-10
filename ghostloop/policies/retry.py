@@ -2,8 +2,7 @@
 
 Wraps a Runtime so that ``step(intent)`` automatically retries on errors
 matching a configurable predicate. Backoff is exponential with optional
-jitter; max_attempts caps the loop. BLOCKED results are NOT retried —
-those came from the safety pipeline and the policy should respect them.
+jitter; max_attempts caps the loop. BLOCKED results are NOT retried,those came from the safety pipeline and the policy should respect them.
 """
 
 from __future__ import annotations
@@ -17,7 +16,7 @@ from ..core import Intent, Result, ResultStatus, Runtime
 
 
 def is_transient_error(result: Result) -> bool:
-    """Default error classifier — catches network / timeout / busy patterns."""
+    """Default error classifier, catches network / timeout / busy patterns."""
     if result.status is not ResultStatus.ERROR:
         return False
     msg = (result.message or "").lower()
@@ -29,7 +28,7 @@ def is_transient_error(result: Result) -> bool:
 
 
 def is_any_error(result: Result) -> bool:
-    """Predicate retrying ALL errors — use only when you trust the underlying API."""
+    """Predicate retrying ALL errors, use only when you trust the underlying API."""
     return result.status is ResultStatus.ERROR
 
 

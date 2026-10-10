@@ -173,7 +173,7 @@ class FleetDispatcher:
 
 @dataclass
 class FleetSnapshot:
-    """JSON-safe view of every robot's state — for dashboards / fleet APIs."""
+    """JSON-safe view of every robot's state, for dashboards / fleet APIs."""
 
     robots: list[dict[str, Any]]
 

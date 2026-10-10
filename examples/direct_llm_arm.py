@@ -3,8 +3,8 @@
 For chat clients that DO speak MCP (Claude Desktop, Cursor, Continue, Cline,
 Zed, Gemini CLI), use ``examples/claude_desktop_mcp_arm.py``. For when you
 just want to drive ghostloop from a script with whatever model you can hit
-over HTTP — OpenAI, Anthropic via OpenAI-compatible proxy, Google Gemini,
-Groq, Ollama, vLLM, llama.cpp server, GhostLM's multi-vendor server — use
+over HTTP, OpenAI, Anthropic via OpenAI-compatible proxy, Google Gemini,
+Groq, Ollama, vLLM, llama.cpp server, GhostLM's multi-vendor server, use
 THIS file.
 
 The bridge is ``LLMPolicy`` from v0.2: any chat endpoint that accepts an
@@ -31,7 +31,7 @@ the safety pipeline gates the resulting Intent; the trace records it.
       OPENAI_MODEL=claude-sonnet-4-6 \\
           python3 examples/direct_llm_arm.py
 
-Same safety pipeline as the MCP example — Geofence + ForceCap +
+Same safety pipeline as the MCP example, Geofence + ForceCap +
 ActionSmoothing + RateLimit + (optional) HumanInTheLoop. Same Backend
 choice (Mock / MuJoCo / ROS 2). Only difference: no MCP wire protocol;
 the LLM-to-tool plumbing happens in-process via LLMPolicy.
@@ -59,7 +59,7 @@ from ghostloop.primitives import move_to, pick, place, scan
 
 
 # ---------------------------------------------------------------------------
-# Config — same shape as the MCP example.
+# Config, same shape as the MCP example.
 # ---------------------------------------------------------------------------
 
 WORKSPACE_MIN = (-0.6, -0.6, 0.0)

@@ -5,9 +5,9 @@ deployments often need:
 
   - Convex polyhedra (polytope obstacles, robot bodies as obstacles to
     each other in fleet ops).
-  - Half-spaces (floor / ceiling / wall planes — semi-infinite).
+  - Half-spaces (floor / ceiling / wall planes, semi-infinite).
   - SDF-style queries: "what's my signed distance to the nearest
-    obstacle?" — useful for proximity-based slow-down policies, not
+    obstacle?", useful for proximity-based slow-down policies, not
     just hard accept/reject.
 
 This module adds those obstacle types and exposes a ``signed_distance``
@@ -79,7 +79,7 @@ class ConvexPolytope:
 
 
 # ---------------------------------------------------------------------------
-# Signed-distance helpers — return shortest signed distance to nearest obstacle.
+# Signed-distance helpers, return shortest signed distance to nearest obstacle.
 # Negative inside an obstacle, positive outside. Returns +inf for "no obstacle".
 # ---------------------------------------------------------------------------
 
@@ -156,14 +156,14 @@ def signed_distance(
     base WorkspaceModel.
     """
     distances: list[float] = []
-    # Outer bounds — negative when outside the box.
+    # Outer bounds, negative when outside the box.
     bx_lo, by_lo, bz_lo = workspace.bounds_min
     bx_hi, by_hi, bz_hi = workspace.bounds_max
     inside_box_dx = min(p[0] - bx_lo, bx_hi - p[0])
     inside_box_dy = min(p[1] - by_lo, by_hi - p[1])
     inside_box_dz = min(p[2] - bz_lo, bz_hi - p[2])
     distances.append(min(inside_box_dx, inside_box_dy, inside_box_dz))
-    # Internal obstacles — negative inside.
+    # Internal obstacles, negative inside.
     for obs in workspace.obstacles:
         if isinstance(obs, Sphere):
             distances.append(_sd_sphere(p, obs))

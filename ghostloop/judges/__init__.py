@@ -1,4 +1,4 @@
-"""Trace judges — score recorded episodes against rubrics.
+"""Trace judges, score recorded episodes against rubrics.
 
 Two judge styles ship in v0.10:
 

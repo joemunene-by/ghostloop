@@ -156,7 +156,7 @@ class TestDeadlineMonitor:
     def test_miss_when_period_exceeds_threshold(self):
         m = DeadlineMonitor(target_hz=10.0, overrun_threshold=1.2)
         m.observe(timestamp=0.0)
-        # 0.5s later — way over the 0.12s threshold.
+        # 0.5s later, way over the 0.12s threshold.
         miss = m.observe(timestamp=0.5)
         assert miss is not None
         assert miss.actual_period_s == pytest.approx(0.5)

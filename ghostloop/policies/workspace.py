@@ -1,4 +1,4 @@
-"""WorkspaceModel + ObstacleAvoidanceGate — geometry richer than the axis-box geofence.
+"""WorkspaceModel + ObstacleAvoidanceGate, geometry richer than the axis-box geofence.
 
 GeofenceGate handles the simplest case: rectangular workspace bounds.
 Real deployments also need:

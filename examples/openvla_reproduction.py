@@ -1,15 +1,15 @@
 """Run OpenVLA-7B through ghostloop's VLABenchmarkSuite.
 
-This is the reproduction harness — a runnable script that takes an
+This is the reproduction harness, a runnable script that takes an
 OpenVLA-7B checkpoint, executes it through ghostloop's safety
 pipeline + bench harness, and produces a Markdown report comparing
 results against the published baselines (Kim et al. 2024,
 arXiv:2406.09246).
 
 Requires GPU. Tested on:
-  - 1x A100 (80GB) — full FP16 inference
-  - 1x A10 (24GB) — INT8 quantised via bitsandbytes
-  - 1x H100 — full FP16, fastest
+  - 1x A100 (80GB), full FP16 inference
+  - 1x A10 (24GB), INT8 quantised via bitsandbytes
+  - 1x H100, full FP16, fastest
 
 CPU is not supported (a 7B-param transformer is too slow per step
 for any meaningful bench size).
@@ -89,7 +89,7 @@ class OpenVLAPolicyAdapter:
       1. Renders the observation as the image+prompt format OpenVLA
          expects (camera frame + natural-language goal).
       2. Generates a 7-D continuous action vector.
-      3. Maps the action to a ghostloop ``Intent`` — for arm tasks this
+      3. Maps the action to a ghostloop ``Intent``, for arm tasks this
          is typically ``move_to(x, y, z) + set_gripper(open/close)``.
 
     The mapping in step 3 is the part that depends on what sim env
@@ -154,7 +154,7 @@ class OpenVLAPolicyAdapter:
         """Map one observation to a ghostloop Intent.
 
         STUB: replace this body with real OpenVLA inference. The shape
-        below documents what the integration needs to do — pulling
+        below documents what the integration needs to do, pulling
         the camera frame from the observation, running it through the
         processor, calling ``predict_action`` (the OpenVLA-specific
         helper), then mapping the 7-D action vector to an Intent.

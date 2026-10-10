@@ -8,7 +8,7 @@ that surface as a ghostloop Backend means every agent loop / safety
 pipeline / bench harness in this repo immediately works against the
 entire ecosystem.
 
-Conditional import — package itself doesn't depend on gymnasium.
+Conditional import, package itself doesn't depend on gymnasium.
 ``GymnasiumBackend(env_id="HalfCheetah-v5")`` raises ImportError with
 install hint at construction time only.
 
@@ -120,7 +120,7 @@ class GymnasiumBackend:
 
     def apply_action(self, action: Any) -> dict[str, Any]:
         """Step the env once with the supplied action. Returns the observation
-        + reward + terminated + truncated + info dict — primitives wrap this."""
+        + reward + terminated + truncated + info dict, primitives wrap this."""
         if self._terminated or self._truncated:
             return {
                 "reward": 0.0,

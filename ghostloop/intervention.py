@@ -1,7 +1,7 @@
-"""Live policy intervention — pause, swap, resume the runtime without restart.
+"""Live policy intervention, pause, swap, resume the runtime without restart.
 
-When something goes wrong in production — a property fires, an alarm
-trips, a human notices the robot is doing the wrong thing — the
+When something goes wrong in production, a property fires, an alarm
+trips, a human notices the robot is doing the wrong thing, the
 fastest recovery isn't a process restart. It's an in-place policy
 swap: replace the current policy with a known-safe fallback (or with
 a manually-controlled teleop policy), then resume.
@@ -69,7 +69,7 @@ class LivePolicyController:
     those changes take effect on the next ``act()`` call.
 
     A short-circuit fallback policy can be configured for PAUSED state
-    so the runtime doesn't block — useful when the policy must keep
+    so the runtime doesn't block, useful when the policy must keep
     issuing safe-fallback intents (e.g. ``stop`` for a mobile base) to
     keep the robot's controller alive.
     """
@@ -96,7 +96,7 @@ class LivePolicyController:
             stuck = self._stuck_intent
             fallback = self.fallback_policy
         if cur is InterventionState.EMERGENCY_STOP:
-            # Single sticky intent — usually 'stop' or 'land' or similar.
+            # Single sticky intent, usually 'stop' or 'land' or similar.
             if stuck is not None:
                 return stuck
             return Intent("stop", {}, rationale="emergency_stop")

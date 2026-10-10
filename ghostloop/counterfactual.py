@@ -1,4 +1,4 @@
-"""Counterfactual trace replay — what would policy B have done on policy A's trace?
+"""Counterfactual trace replay, what would policy B have done on policy A's trace?
 
 Standard practice in LLM safety / red-teaming is to replay a recorded
 conversation through a different model and diff its outputs. Robotics
@@ -13,7 +13,7 @@ This module gives you that for free, against any recorded ``Trace``:
   print(cf.render_md())
 
 The new policy is asked, at each event, "given this state_before, what
-intent would you emit?" — its answer is captured as the counterfactual
+intent would you emit?", its answer is captured as the counterfactual
 intent. We don't actually re-execute the world (we'd need to roll the
 simulator back), so this is shadow-mode reasoning: the comparison is
 "would the policy have CHOSEN differently". For a full re-execution
@@ -131,7 +131,7 @@ class CounterfactualTrace:
 
     def render_md(self) -> str:
         lines = [
-            f"# Counterfactual replay — {self.new_policy_name} vs original",
+            f"# Counterfactual replay, {self.new_policy_name} vs original",
             "",
             f"- Episode: `{self.original_episode_id}`",
             f"- Steps: {self.n}",
@@ -145,7 +145,7 @@ class CounterfactualTrace:
         ]
         for e in self.events:
             cf_name = e.counterfactual_intent.name if e.counterfactual_intent else "(declined)"
-            check = "✓" if e.intent_match else "✗"
+            check = " " if e.intent_match else " "
             lines.append(
                 f"| {e.step} | {e.original_intent.name} | {cf_name} "
                 f"| {check} | {e.args_distance:.3g} |"

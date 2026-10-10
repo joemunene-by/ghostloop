@@ -1,7 +1,7 @@
 """Bounding-box geofence: deny if the requested target is outside the workspace.
 
 Inspects ``intent.args`` for ``x`` / ``y`` / ``z`` (or ``target`` as a 3-tuple).
-If none are present the gate is a no-op for that intent — only motion-with-
+If none are present the gate is a no-op for that intent, only motion-with-
 explicit-coords gets fenced. Real workspaces are obviously not always
 axis-aligned boxes; the abstraction generalises to convex hulls or
 joint-space limits when those backends land."""
@@ -21,7 +21,7 @@ class GeofenceGate:
     """Reject motions whose target falls outside an axis-aligned bounding box.
 
     ``min_corner`` and ``max_corner`` are inclusive 3D points. Primitives with
-    no positional argument pass through transparently — geofencing only
+    no positional argument pass through transparently, geofencing only
     triggers when the intent declares a target.
     """
 

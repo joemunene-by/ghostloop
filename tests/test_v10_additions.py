@@ -336,7 +336,7 @@ class TestPropertyMining:
         ws_mined = [m for m in mined if m.pattern == "workspace_bounds"]
         assert len(ws_mined) == 1
         prop = ws_mined[0].promote()
-        # Apply on a trace within bounds — should hold.
+        # Apply on a trace within bounds, should hold.
         result = prop.check(traces[0])
         assert result.held
 

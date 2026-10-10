@@ -1,4 +1,4 @@
-"""Cross-morphology primitive library — actions for every kind of robot.
+"""Cross-morphology primitive library, actions for every kind of robot.
 
 The v0.1 motion + manipulation primitives covered arms (move_to / pick /
 place / scan). Real fleets are wider: a mobile base wants ``drive`` /
@@ -6,7 +6,7 @@ place / scan). Real fleets are wider: a mobile base wants ``drive`` /
 a drone wants ``takeoff`` / ``land`` / ``fly_to``; a humanoid wants
 ``wave`` / ``look_at`` / ``point_at``. This module catalogues them.
 
-Every primitive here is backend-agnostic — the call dispatches through
+Every primitive here is backend-agnostic, the call dispatches through
 ``backend.apply_action(...)`` (Gymnasium-style) when present, otherwise
 records the intent in the snapshot so policies + traces still capture
 the behaviour. Rebind to your real backend by writing a thin Primitive
@@ -59,7 +59,7 @@ def _emit_intent(backend: Backend, action: str, **payload: Any) -> Result:
     return Result(
         status=ResultStatus.OK,
         observation={"action": action, **payload, "noop_backend": True},
-        message=f"{action}({payload}) — backend has no apply_action; recorded only",
+        message=f"{action}({payload}), backend has no apply_action; recorded only",
     )
 
 
@@ -78,8 +78,8 @@ def drive() -> Primitive:
         name="drive", call=_call,
         description="Drive a mobile base. Linear m/s + angular rad/s.",
         arg_schema={
-            "linear_x": "float — forward velocity m/s",
-            "angular_z": "float — yaw velocity rad/s",
+            "linear_x": "float, forward velocity m/s",
+            "angular_z": "float, yaw velocity rad/s",
         },
     )
 
@@ -101,11 +101,11 @@ def goto() -> Primitive:
         return _emit_intent(backend, "goto", x=x, y=y, theta=theta)
     return Primitive(
         name="goto", call=_call,
-        description="Navigate to (x, y, theta) — yaw in radians.",
+        description="Navigate to (x, y, theta), yaw in radians.",
         arg_schema={
-            "x": "float — target x metres",
-            "y": "float — target y metres",
-            "theta": "float — target yaw radians (default 0)",
+            "x": "float, target x metres",
+            "y": "float, target y metres",
+            "theta": "float, target yaw radians (default 0)",
         },
     )
 
@@ -117,7 +117,7 @@ def rotate() -> Primitive:
     return Primitive(
         name="rotate", call=_call,
         description="Rotate in place by dtheta radians.",
-        arg_schema={"dtheta": "float — yaw delta radians"},
+        arg_schema={"dtheta": "float, yaw delta radians"},
     )
 
 
@@ -163,9 +163,9 @@ def walk_to() -> Primitive:
         name="walk_to", call=_call,
         description="Quadruped: walk to (x, y, theta).",
         arg_schema={
-            "x": "float — target x metres",
-            "y": "float — target y metres",
-            "theta": "float — target yaw radians",
+            "x": "float, target x metres",
+            "y": "float, target y metres",
+            "theta": "float, target yaw radians",
         },
     )
 
@@ -181,7 +181,7 @@ def wave() -> Primitive:
     return Primitive(
         name="wave", call=_call,
         description="Humanoid: wave a hand (right by default).",
-        arg_schema={"hand": "str — 'right' or 'left'"},
+        arg_schema={"hand": "str, 'right' or 'left'"},
     )
 
 
@@ -205,7 +205,7 @@ def point_at() -> Primitive:
         description="Humanoid: point a hand at world coordinates.",
         arg_schema={
             "x": "float", "y": "float", "z": "float",
-            "hand": "str — 'right' or 'left'",
+            "hand": "str, 'right' or 'left'",
         },
     )
 
@@ -216,7 +216,7 @@ def nod() -> Primitive:
     return Primitive(
         name="nod", call=_call,
         description="Humanoid: nod 'yes' (vertical) or 'no' (horizontal).",
-        arg_schema={"direction": "str — 'yes' or 'no'"},
+        arg_schema={"direction": "str, 'yes' or 'no'"},
     )
 
 
@@ -231,7 +231,7 @@ def takeoff() -> Primitive:
     return Primitive(
         name="takeoff", call=_call,
         description="Drone: takeoff to target altitude (m).",
-        arg_schema={"altitude": "float — target altitude metres"},
+        arg_schema={"altitude": "float, target altitude metres"},
     )
 
 
@@ -253,7 +253,7 @@ def fly_to() -> Primitive:
         description="Drone: fly to a 3D pose (x, y, z, yaw).",
         arg_schema={
             "x": "float", "y": "float", "z": "float",
-            "yaw": "float — heading radians",
+            "yaw": "float, heading radians",
         },
     )
 
@@ -264,7 +264,7 @@ def hover() -> Primitive:
     return Primitive(
         name="hover", call=_call,
         description="Drone: hold position for N seconds.",
-        arg_schema={"seconds": "float — hold duration"},
+        arg_schema={"seconds": "float, hold duration"},
     )
 
 
@@ -284,8 +284,8 @@ def set_joint() -> Primitive:
         description="Set a single joint's angle (radians) over duration (s).",
         arg_schema={
             "joint_name": "str",
-            "angle": "float — radians",
-            "duration": "float — seconds",
+            "angle": "float, radians",
+            "duration": "float, seconds",
         },
     )
 
@@ -297,8 +297,8 @@ def set_gripper() -> Primitive:
         name="set_gripper", call=_call,
         description="Open or close a gripper. Force optional (Newtons).",
         arg_schema={
-            "state": "str — 'open' / 'close' / 'half'",
-            "force": "float — clamp force in Newtons",
+            "state": "str, 'open' / 'close' / 'half'",
+            "force": "float, clamp force in Newtons",
         },
     )
 
@@ -342,7 +342,7 @@ def take_photo() -> Primitive:
     return Primitive(
         name="take_photo", call=_call,
         description="Capture a frame from a named camera.",
-        arg_schema={"camera": "str — camera name (default 'default')"},
+        arg_schema={"camera": "str, camera name (default 'default')"},
     )
 
 
@@ -382,7 +382,7 @@ def wait() -> Primitive:
     return Primitive(
         name="wait", call=_call,
         description="Block for N seconds (max 30). Use sparingly.",
-        arg_schema={"seconds": "float — duration"},
+        arg_schema={"seconds": "float, duration"},
     )
 
 
@@ -398,8 +398,8 @@ def emit_event() -> Primitive:
         name="emit_event", call=_call,
         description="Record a labelled event in the trace. Useful for milestones.",
         arg_schema={
-            "kind": "str — event class label",
-            "message": "str — free-form description",
+            "kind": "str, event class label",
+            "message": "str, free-form description",
         },
     )
 
@@ -432,7 +432,7 @@ CATEGORIES = {
 def primitives_for_categories(categories: list[str]) -> list[Primitive]:
     """Build a list of Primitive instances from category names.
 
-    Categories not in the catalogue are silently ignored — passing
+    Categories not in the catalogue are silently ignored, passing
     user-typed strings is safe.
     """
     out: list[Primitive] = []

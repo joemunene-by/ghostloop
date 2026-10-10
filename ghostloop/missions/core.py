@@ -263,7 +263,7 @@ class MissionRunner:
                     attempt_success = False
                     last_failure = (
                         f"step {step.name!r} intent {intent.name!r}: "
-                        f"{result.status.value} — {result.message}"
+                        f"{result.status.value}, {result.message}"
                     )
                     break
             intents_out = [

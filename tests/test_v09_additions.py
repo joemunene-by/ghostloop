@@ -48,7 +48,7 @@ def _registry() -> PrimitiveRegistry:
 
 
 # ---------------------------------------------------------------------------
-# ROS2Backend (live-gated — only runs when rclpy is installed)
+# ROS2Backend (live-gated, only runs when rclpy is installed)
 # ---------------------------------------------------------------------------
 
 

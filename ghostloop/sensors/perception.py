@@ -1,20 +1,20 @@
-"""RGB-D fusion + lightweight object detection — v1.0 perception layer.
+"""RGB-D fusion + lightweight object detection, v1.0 perception layer.
 
 The v0.5 sensors module shipped a ``Camera`` Protocol with intrinsics
 + an opaque ``rgb`` / ``depth`` payload. This module adds the
 processing layer on top:
 
-  - ``deproject_depth(frame)`` — convert a depth image + intrinsics
+  - ``deproject_depth(frame)``, convert a depth image + intrinsics
     into a 3D point cloud (numpy if available, list-of-tuples
     fallback).
-  - ``RGBDFusion`` — combine an RGB frame and a depth frame from the
+  - ``RGBDFusion``, combine an RGB frame and a depth frame from the
     same camera into a single ``FusedFrame`` carrying the cloud + a
     per-pixel colour map.
-  - ``BlobDetector`` — colour-threshold blob-finder that produces
+  - ``BlobDetector``, colour-threshold blob-finder that produces
     ``Detection`` records (bounding box + centroid in pixel + 3D
     space). Lightweight, stdlib-only fallback that works without
     OpenCV / mediapipe.
-  - ``CameraProcessorPipeline`` — chain processors that operate on
+  - ``CameraProcessorPipeline``, chain processors that operate on
     a ``CameraFrame`` and emit ``Detection``s.
 
 The detection layer is deliberately simple: a colour-threshold
@@ -123,7 +123,7 @@ def deproject_depth(
 ) -> FusedFrame:
     """Convert a depth image + intrinsics into a 3D point cloud.
 
-    Backend-agnostic — accepts numpy arrays (H,W) or lists of lists.
+    Backend-agnostic, accepts numpy arrays (H,W) or lists of lists.
     Each pixel (u, v) deprojects to:
 
         x = (u - cx) * Z / fx
@@ -158,7 +158,7 @@ def _deproject_numpy(
         )
     H, W = depth.shape
     if (W, H) != (intr.width, intr.height):
-        # Don't refuse — many backends return depth at intrinsics
+        # Don't refuse, many backends return depth at intrinsics
         # resolution but tagging is loose. Just trust the intrinsics.
         pass
     u = np.arange(W).reshape(1, W).astype(np.float32)

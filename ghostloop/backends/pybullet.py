@@ -1,6 +1,6 @@
 """PyBulletBackend: Bullet Physics backend, no-MuJoCo path.
 
-Conditional import — same pattern as MuJoCoBackend, the package itself
+Conditional import, same pattern as MuJoCoBackend, the package itself
 imports cleanly without ``pybullet``. PyBullet is BSD-licensed, ships
 on PyPI as a single wheel for every major OS, and supports URDF natively.
 For users who can't install MuJoCo (Windows GPU drivers, NIH licensing
@@ -190,7 +190,7 @@ def move_to() -> Primitive:
 
 
 def _scan_call(backend: PyBulletBackend, radius: float = 1.0) -> Result:
-    """Read all bodies within ``radius`` of our base — proxy for vision."""
+    """Read all bodies within ``radius`` of our base, proxy for vision."""
     snap = backend.snapshot()
     cx, cy, cz = snap["position"]
     detections: list[dict[str, Any]] = []

@@ -375,7 +375,7 @@ class TestTraceQuery:
 
 
 class _LinearPolicy:
-    """Trivial scripted policy — emits constant action; logs update calls."""
+    """Trivial scripted policy, emits constant action; logs update calls."""
 
     def __init__(self):
         self.update_calls = 0

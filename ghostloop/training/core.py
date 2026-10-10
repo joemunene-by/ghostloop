@@ -261,7 +261,7 @@ def train_safe(
       - The harness DOES NOT enforce policy update semantics; the
         adapter is free to use PPO / SAC / off-policy / scripted.
       - Violations come from the runtime's safety pipeline, not from
-        the environment — that's the whole point: training under the
+        the environment, that's the whole point: training under the
         safety pipeline is what makes the trained policy deployable
         without removing it.
     """

@@ -6,13 +6,13 @@ sqlite3 is in the stdlib; the schema below is forward-compatible (new
 columns get added via ALTER TABLE migrations on open).
 
 Tables:
-  episodes      — every Trace ever ingested. Full JSONL stored in a TEXT
+  episodes, every Trace ever ingested. Full JSONL stored in a TEXT
                   column for replay; metadata extracted into indexed
                   columns for fast filtering.
-  run_reports   — every RunReport ever scored. Per-episode pass/fail in
+  run_reports, every RunReport ever scored. Per-episode pass/fail in
                   the JSON blob; aggregate rate / Wilson CI in indexed
                   columns for dashboards.
-  comparisons   — every PairedComparison ever computed.
+  comparisons, every PairedComparison ever computed.
 
 The store is content-addressed: episode_id, run_name+bench_name, and
 comparison_id are unique. Re-ingesting the same artefact is a no-op.
@@ -302,7 +302,7 @@ class GhostloopStore:
         return out
 
 
-# Duck-typed protocols — store stays usable even if bench/ ever moves.
+# Duck-typed protocols, store stays usable even if bench/ ever moves.
 class RunReportLike(Protocol):
     run_name: str
     bench_name: str

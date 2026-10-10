@@ -1,4 +1,4 @@
-"""Adversarial bench generator — fuzz over Episode initial states.
+"""Adversarial bench generator, fuzz over Episode initial states.
 
 Standard regression benches are static: fixed scenarios, hand-picked
 seeds. Real failures live in the long tail. This module *searches*
@@ -8,10 +8,10 @@ where the policy fails (or comes close).
 
 Three generators ship:
 
-  - ``random_seeds`` — uniform random sampling, fastest baseline.
-  - ``grid_seeds`` — exhaustive cartesian product over a parameter
+  - ``random_seeds``, uniform random sampling, fastest baseline.
+  - ``grid_seeds``, exhaustive cartesian product over a parameter
     grid; useful for low-dim spaces.
-  - ``cma_es_seeds`` — covariance-matrix-adaptation evolution
+  - ``cma_es_seeds``, covariance-matrix-adaptation evolution
     strategy: searches the parameter space toward failure-maximising
     seeds. Implemented in pure-stdlib (small CMA-ES variant) so it
     runs anywhere; for high-dim spaces install a real CMA-ES library.
@@ -19,7 +19,7 @@ Three generators ship:
 Each generator returns a list of ``AdversarialResult`` records sorted
 by descending failure score (number of safety violations + 1 per
 failed predicate). Add the high-scoring seeds back to your bench as
-regression cases — that's testing-as-search.
+regression cases, that's testing-as-search.
 
 All randomness is reproducible: pass an integer ``seed`` to make the
 sweep deterministic.
@@ -159,7 +159,7 @@ def cma_es_seeds(
 
     Operates in normalised [0,1] coordinates per parameter, projecting
     samples back into the configured ranges before running them.
-    Single-mean Gaussian search with no covariance update — adequate
+    Single-mean Gaussian search with no covariance update, adequate
     for finding adversarial seeds in low-dim spaces. For high-dim use
     install a real CMA-ES library and wire it through ``perturber``.
     """

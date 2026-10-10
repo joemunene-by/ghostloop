@@ -191,7 +191,7 @@ class TestCameraSensors:
 
     def test_capture_camera_primitive_falls_back_to_mock(self):
         backend = MockBackend()
-        # backend has no .cameras — primitive must auto-mock.
+        # backend has no .cameras, primitive must auto-mock.
         prim = capture_camera()
         result = prim.call(backend, camera="default")
         assert result.ok

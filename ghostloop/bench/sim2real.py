@@ -1,10 +1,10 @@
-"""Sim-to-real benchmark harness — paired comparison across two backends.
+"""Sim-to-real benchmark harness, paired comparison across two backends.
 
 Wraps the v0.2 paired-comparison machinery (Wilson CI, McNemar, Cohen's h)
 specifically for the question every robotics team eventually asks:
 
   "We trained in sim. How much does the policy degrade on the real
-   robot — and how much of that gap closes when we add domain
+   robot, and how much of that gap closes when we add domain
    randomization to the sim training?"
 
 Sim2RealBench runs the SAME bench against TWO backends (a "calibration"
@@ -78,7 +78,7 @@ class Sim2RealReport:
         real_lo, real_hi = real.ci
         gap_lo, gap_hi = self.transfer_gap_ci
         lines = [
-            f"# Sim-to-Real Bench — {self.sim_label} vs {self.real_label}",
+            f"# Sim-to-Real Bench, {self.sim_label} vs {self.real_label}",
             "",
             f"- **{self.sim_label}**: {sim.passed}/{sim.n}"
             f" = {sim.rate:.1%}  (95% CI [{sim_lo:.1%}, {sim_hi:.1%}])",
@@ -111,7 +111,7 @@ def _compute_action_kl(
 
     Cheap proxy for "policy did the same kind of work in sim vs real".
     A high KL means primitives were dispatched at very different rates
-    on the two backends — a red flag for transfer.
+    on the two backends, a red flag for transfer.
 
     Add-1 smoothing to avoid log(0) on primitives present in only one
     backend.
@@ -179,7 +179,7 @@ class Sim2RealBench:
     """Run paired Episode lists against two configurations and produce a report.
 
     Episodes own their own backend via the ``setup`` callable, so the
-    bench takes two Episode lists — typically the same goals + policies
+    bench takes two Episode lists, typically the same goals + policies
     but with different ``setup`` and / or ``pipeline`` reflecting the
     two regimes (sim vs real, sim vs randomized-sim, calibration vs
     deployment). The lists must be the same length; episodes pair by

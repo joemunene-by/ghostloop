@@ -1,4 +1,4 @@
-"""Composite primitives — sequence existing primitives behind a single name.
+"""Composite primitives, sequence existing primitives behind a single name.
 
 Real robots have macros: "approach_grasp" = (move_to_pre_grasp,
 descend_to_grasp_pose, close_gripper, lift). Defining each as one

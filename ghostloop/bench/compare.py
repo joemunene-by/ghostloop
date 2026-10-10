@@ -18,7 +18,7 @@ class PairedComparison:
     passed and B failed (``a_only``) versus the reverse (``b_only``). The
     null hypothesis is that the two policies are interchangeable on this
     bench. Pairs where both pass or both fail are uninformative and dropped
-    from the test (standard McNemar — only discordant pairs matter).
+    from the test (standard McNemar, only discordant pairs matter).
     """
 
     bench_name: str

@@ -1,4 +1,4 @@
-"""Telemetry — OpenTelemetry hooks + energy ledger.
+"""Telemetry, OpenTelemetry hooks + energy ledger.
 
 Two modules ship under telemetry/:
 

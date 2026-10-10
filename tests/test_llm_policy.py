@@ -1,4 +1,4 @@
-"""Tests for ghostloop.policies.llm — schema build, arg coercion, loop driver."""
+"""Tests for ghostloop.policies.llm, schema build, arg coercion, loop driver."""
 
 import json
 import sys
@@ -260,7 +260,7 @@ class TestLLMPolicyLoop:
             registry=_registry(),
             policy_pipeline=PolicyPipeline(),
         )
-        # LLM never emits 'done' — loop must give up at max_steps.
+        # LLM never emits 'done', loop must give up at max_steps.
         with patch("ghostloop.policies.llm.urllib.request.urlopen") as mock_urlopen:
             def _next_response(*a, **k):
                 resp = MagicMock()

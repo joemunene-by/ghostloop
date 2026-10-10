@@ -49,13 +49,13 @@ class RunReport:
     def render_md(self) -> str:
         lo, hi = self.ci
         return (
-            f"# {self.bench_name} — {self.run_name}\n\n"
+            f"# {self.bench_name}, {self.run_name}\n\n"
             f"**Pass rate**: {self.passed}/{self.n} = {self.rate:.1%} "
             f"(Wilson 95% CI [{lo:.1%}, {hi:.1%}])\n\n"
             "| Episode | Passed | Steps | Notes |\n"
             "|---|---:|---:|---|\n"
             + "\n".join(
-                f"| {r.episode_name} | {'✓' if r.passed else '✗'} | "
+                f"| {r.episode_name} | {' ' if r.passed else ' '} | "
                 f"{r.steps} | {r.notes or ''} |"
                 for r in self.results
             )
@@ -64,7 +64,7 @@ class RunReport:
 
 
 def wilson_ci(successes: int, n: int, z: float = 1.96) -> tuple[float, float]:
-    """Wilson score interval — well-behaved for small n and edge proportions.
+    """Wilson score interval, well-behaved for small n and edge proportions.
 
     Standard Normal-approximation breaks at p≈0 / p≈1 / small n; Wilson is the
     accepted fix and it's what GhostBench uses for the cybersec bets too.

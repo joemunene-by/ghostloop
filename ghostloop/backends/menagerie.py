@@ -1,7 +1,7 @@
 """MuJoCo Menagerie loader.
 
 The MuJoCo Menagerie (https://github.com/google-deepmind/mujoco_menagerie) is
-the canonical curated collection of high-quality MuJoCo robot models — Franka
+the canonical curated collection of high-quality MuJoCo robot models, Franka
 Emika Panda, UR5e, Stretch RE3, Allegro hand, Spot, Aloha bimanual, etc., all
 under permissive licences. This loader handles two cases:
 
@@ -91,9 +91,9 @@ def resolve_model(name: str, menagerie_root: str | None = None) -> str:
     """Resolve a friendly model name (or relative XML path) to an absolute path.
 
     Accepted inputs:
-      "franka" / "panda" / "ur5e" / ... — known model alias from KNOWN_MODELS
-      "franka_emika_panda/scene.xml"   — explicit relative path inside the menagerie
-      "/abs/path/to/some.xml"          — absolute path passed straight through
+      "franka" / "panda" / "ur5e" / ..., known model alias from KNOWN_MODELS
+      "franka_emika_panda/scene.xml", explicit relative path inside the menagerie
+      "/abs/path/to/some.xml", absolute path passed straight through
     """
     if os.path.isabs(name) and Path(name).is_file():
         return name

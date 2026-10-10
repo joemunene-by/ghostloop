@@ -10,7 +10,7 @@ A tool-using agent runtime, fail-closed safety pipeline, statistically-rigorous 
 
 [![PyPI](https://img.shields.io/pypi/v/ghostloop?color=14B8A6&label=pypi)](https://pypi.org/project/ghostloop/)
 [![Downloads](https://static.pepy.tech/badge/ghostloop/month)](https://pepy.tech/project/ghostloop)
-[![HF Space](https://img.shields.io/badge/🤗%20live%20demo-Ghostgim%2Fghostloop--demo-FFD21E)](https://huggingface.co/spaces/Ghostgim/ghostloop-demo)
+[![HF Space](https://img.shields.io/badge/%20live%20demo-Ghostgim%2Fghostloop--demo-FFD21E)](https://huggingface.co/spaces/Ghostgim/ghostloop-demo)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Status](https://img.shields.io/badge/status-v1.1.0%20production-14B8A6.svg)](#)
@@ -20,7 +20,7 @@ A tool-using agent runtime, fail-closed safety pipeline, statistically-rigorous 
 <br/>
 
 <a href="assets/ghostloop-story.mp4">
-  <img src="assets/story-poster.png" alt="ghostloop — the film. Drone control, fail-closed safety, GhostLM, and the ghost family." width="820">
+ <img src="assets/story-poster.png" alt="ghostloop, the film. Drone control, fail-closed safety, GhostLM, and the ghost family." width="820">
 </a>
 
 <sub>▶ <b><a href="assets/ghostloop-story.mp4">Watch the film</a></b> · 2 min, narrated &nbsp;·&nbsp; or jump to the <b><a href="assets/ghostloop-connect.mp4">80-second hands-on walkthrough</a></b></sub>
@@ -38,27 +38,27 @@ Robotics in 2026 has two healthy ecosystems and a missing middle.
 
 Nobody ships **the layer in between**: a runtime where a model emits high-level intents like `move_to(0.4, 0.2, 0.1)` or `pick("widget-7")`, those intents flow through a **fail-closed safety pipeline**, the survivors execute on a backend (sim or hardware), and every step is captured in a structured **trace** that can be replayed, audited, scored, mined, counterfactually re-played, or causally analysed.
 
-That layer is `ghostloop`. The shape is borrowed from `GhostAgent` in [GhostLM](https://github.com/joemunene-by/GhostLM): tool registry, policy gates, structured trace, paired-comparison eval. The novel piece is binding it to robot primitives instead of CVE lookups, making the runtime backend-agnostic so the same agent loop drives a mock today, MuJoCo / PyBullet / Gymnasium right now, and ROS 2 / direct hardware later — and adding a layer of post-hoc analysis tooling (counterfactual replay, causal attribution, LLM-as-judge, property mining, adversarial fuzzing) that no other robotics framework ships.
+That layer is `ghostloop`. The shape is borrowed from `GhostAgent` in [GhostLM](https://github.com/joemunene-by/GhostLM): tool registry, policy gates, structured trace, paired-comparison eval. The novel piece is binding it to robot primitives instead of CVE lookups, making the runtime backend-agnostic so the same agent loop drives a mock today, MuJoCo / PyBullet / Gymnasium right now, and ROS 2 / direct hardware later, and adding a layer of post-hoc analysis tooling (counterfactual replay, causal attribution, LLM-as-judge, property mining, adversarial fuzzing) that no other robotics framework ships.
 
 ## Architecture
 
 ```
-                policy        registry           pipeline           backend         post-hoc
-                 emits         resolves           gates           executes         analysis
-   user goal  ┌────────┐   ┌──────────┐   ┌──────────────┐   ┌──────────┐   ┌─────────────────┐
-   ────────► │ Intent │ ► │ Primitive │ ► │PolicyPipeline│ ► │ Backend  │ ► │ counterfactual  │
-              └────────┘   └──────────┘   └──────────────┘   └──────────┘   │ causal          │
-                                                                  │         │ LLM-judge       │
-                                                                  ▼         │ property mining │
-                                              ┌──────────────────────┐      │ adversarial     │
-                                              │  Trace (JSONL)       │ ───► │ trace query DSL │
-                                              └──────────────────────┘      │ energy ledger   │
-                                                       │                    └─────────────────┘
-                                                       ▼
-                                  ┌────────────────────────────────────┐
-                                  │ Bench: Wilson CI + McNemar +       │
-                                  │ Cohen's h + Sim2Real transfer gap  │
-                                  └────────────────────────────────────┘
+ policy registry pipeline backend post-hoc
+ emits resolves gates executes analysis
+ user goal ┌────────┐ ┌──────────┐ ┌──────────────┐ ┌──────────┐ ┌─────────────────┐
+ ────────► │ Intent │ ► │ Primitive │ ► │PolicyPipeline│ ► │ Backend │ ► │ counterfactual │
+ └────────┘ └──────────┘ └──────────────┘ └──────────┘ │ causal │
+ │ │ LLM-judge │
+ ▼ │ property mining │
+ ┌──────────────────────┐ │ adversarial │
+ │ Trace (JSONL) │ ───► │ trace query DSL │
+ └──────────────────────┘ │ energy ledger │
+ │ └─────────────────┘
+ ▼
+ ┌────────────────────────────────────┐
+ │ Bench: Wilson CI + McNemar + │
+ │ Cohen's h + Sim2Real transfer gap │
+ └────────────────────────────────────┘
 ```
 
 | Type | Role |
@@ -71,7 +71,7 @@ That layer is `ghostloop`. The shape is borrowed from `GhostAgent` in [GhostLM](
 | `LLMPolicy` / `VLAPolicy` | Bridge any OpenAI-compatible chat endpoint or VLA action head to the registry. |
 | `Mission` | DAG of Steps with prerequisites + retry semantics. Kahn-validated. |
 | `bench` | Episode harness with Wilson 95% CIs, McNemar exact p, Cohen's h, paired comparison, sim2real transfer gap. |
-| `properties` | Declarative invariants over traces — `Always` / `Eventually` / `Until` STL combinators + auto-mined candidates. |
+| `properties` | Declarative invariants over traces, `Always` / `Eventually` / `Until` STL combinators + auto-mined candidates. |
 | `judges` | LLM-as-judge + heuristic rule-based trace scoring. |
 | `training` | Constrained-MDP rollout collector + Lagrangian multiplier + HER relabeling. |
 
@@ -90,7 +90,7 @@ A concrete example of what the cross-backend bench is for: the same UR5e with gr
 
 ```bash
 ghostloop xbench --preset workspace_grid_27 --a mujoco:ur5e --b mujoco:ur5e \
-  --b-arg gravity_compensation=false --seeds 0 1 2 --out-dir xbench-out
+ --b-arg gravity_compensation=false --seeds 0 1 2 --out-dir xbench-out
 ```
 
 ## What ships
@@ -105,22 +105,22 @@ ghostloop xbench --preset workspace_grid_27 --a mujoco:ur5e --b mujoco:ur5e \
 
 ### Backends (6, plus plugins)
 All of them are built by spec through `create_backend(...)` / `ghostloop backends`; third-party simulators register through the `ghostloop.backends` entry point.
-- **`MockBackend`** — zero-install in-memory.
+- **`MockBackend`**, zero-install in-memory.
 - **`MuJoCoBackend`**: Google DeepMind MuJoCo with Menagerie auto-clone. `MuJoCoBackend.from_menagerie("ur5e")` gives IK-driven Cartesian control on UR5e / UR10e / Panda.
-- **`PyBulletBackend`** — Bullet physics for users without MuJoCo.
-- **`GymnasiumBackend`** — wrap any Farama Gymnasium env (hundreds of robotics + RL envs).
-- **`ROS2Backend`** — rclpy adapter for real-hardware deployments via DDS.
-- **`RandomizedBackend`** — wrap any backend with reproducible noise / jitter / dropout for sim2real.
+- **`PyBulletBackend`**, Bullet physics for users without MuJoCo.
+- **`GymnasiumBackend`**, wrap any Farama Gymnasium env (hundreds of robotics + RL envs).
+- **`ROS2Backend`**, rclpy adapter for real-hardware deployments via DDS.
+- **`RandomizedBackend`**, wrap any backend with reproducible noise / jitter / dropout for sim2real.
 
 ### Workspace + geometry
 `WorkspaceModel` with axis-aligned boxes + spheres, `HalfSpace` / `ConvexPolytope` / `signed_distance` for SDF queries, `workspace_from_urdf(...)` to auto-build from a URDF, plus `project_to_workspace` / `project_to_sdf` for safe-action repair when a policy violates constraints.
 
 ### Bench harness
 - `Episode` / `EpisodeRunner` / `RunReport` with Wilson 95% CIs.
-- `paired_compare` — McNemar exact p + Cohen's h.
-- `Sim2RealBench` — paired transfer-gap harness with per-primitive action-distribution KL.
-- `random_seeds` / `grid_seeds` / `cma_es_seeds` — adversarial fuzzers for finding failure-prone Episode initial states.
-- `RewardShaper` — declarative reward DSL (`OnPrimitive` / `OnDecision` / `OnObservation` / `StepCost` / `CustomReward`).
+- `paired_compare`, McNemar exact p + Cohen's h.
+- `Sim2RealBench`, paired transfer-gap harness with per-primitive action-distribution KL.
+- `random_seeds` / `grid_seeds` / `cma_es_seeds`, adversarial fuzzers for finding failure-prone Episode initial states.
+- `RewardShaper`, declarative reward DSL (`OnPrimitive` / `OnDecision` / `OnObservation` / `StepCost` / `CustomReward`).
 - Episode catalogue: `preset_reach_8` / `preset_pick_and_place_4` / `preset_geofence_smoke` / `preset_workspace_grid_27`, all seedable.
 - `cross_backend_compare` / `ghostloop xbench`: the same seeded episodes on two backends, paired, with provenance and traces.
 - `Workspace` canonical frame so presets, gates and predicates written once run on any embodiment.
@@ -130,38 +130,38 @@ All of them are built by spec through `create_backend(...)` / `ghostloop backend
 - `PropertyEngine` with built-in invariants (`StaysInsideWorkspace`, `NeverHoldsTwoObjects`, `NeverExceedsRate`, `NoConsecutiveDuplicateIntents`).
 - `Always` / `Eventually` / `Until` STL combinators over sliding windows.
 - `AndProperty` / `OrProperty` / `NotProperty` boolean combinators.
-- `mine_properties(traces)` — auto-discover candidate invariants from a corpus (followup transitions, numeric bounds, workspace AABBs).
+- `mine_properties(traces)`, auto-discover candidate invariants from a corpus (followup transitions, numeric bounds, workspace AABBs).
 
 ### Post-hoc analysis (the v0.10 novel pillars)
-- `replay_with_policy(trace, new_policy)` — counterfactual reasoning. "What would policy B have done on policy A's trace?"
-- `attribute_failure(trace, property)` — leave-one-out causal attribution; ranks events by necessity.
-- `minimal_cause_set` — greedy multi-event attribution.
-- `LLMJudge` — score traces with an LLM against a configurable rubric.
-- `HeuristicJudge` — rule-based predicate scoring for air-gapped CI.
+- `replay_with_policy(trace, new_policy)`, counterfactual reasoning. "What would policy B have done on policy A's trace?"
+- `attribute_failure(trace, property)`, leave-one-out causal attribution; ranks events by necessity.
+- `minimal_cause_set`, greedy multi-event attribution.
+- `LLMJudge`, score traces with an LLM against a configurable rubric.
+- `HeuristicJudge`, rule-based predicate scoring for air-gapped CI.
 
 ### Missions + skills
-- `Mission` / `Step` / `MissionRunner` — DAG of steps with prerequisites, retry semantics, required-vs-optional.
-- `SkillGraph` — typed DAG of skills with prereq + refines edges.
-- `MorphologyRegistry` — register `pick` per `(franka, ur5e, spot)` and build per robot.
-- `composite_primitive` — sequence existing primitives behind one name.
+- `Mission` / `Step` / `MissionRunner`, DAG of steps with prerequisites, retry semantics, required-vs-optional.
+- `SkillGraph`, typed DAG of skills with prereq + refines edges.
+- `MorphologyRegistry`, register `pick` per `(franka, ur5e, spot)` and build per robot.
+- `composite_primitive`, sequence existing primitives behind one name.
 
 ### Training (constrained-MDP + HER)
-- `SafeRolloutCollector` + `LagrangianMultiplier` + `train_safe` — train policies under the safety pipeline; safety violations contribute to a Lagrangian penalty.
-- `hindsight_relabel(rollout, goal_extractor, reward_fn)` — classic HER (Andrychowicz et al. 2017) with FINAL / FUTURE / EPISODE / RANDOM strategies.
-- `sparse_indicator_reward(threshold)` — canonical HER reward.
+- `SafeRolloutCollector` + `LagrangianMultiplier` + `train_safe`, train policies under the safety pipeline; safety violations contribute to a Lagrangian penalty.
+- `hindsight_relabel(rollout, goal_extractor, reward_fn)`, classic HER (Andrychowicz et al. 2017) with FINAL / FUTURE / EPISODE / RANDOM strategies.
+- `sparse_indicator_reward(threshold)`, canonical HER reward.
 
 ### Telemetry + persistence
 - OpenTelemetry hooks (`step_span`, `record_decision`, `record_result`).
-- `EnergyLedger` — per-primitive joule accounting with constant / linear-in-arg / linear-in-duration / linear-in-xyz models.
-- `GhostloopStore` — SQLite store for episodes / runs / comparisons.
+- `EnergyLedger`, per-primitive joule accounting with constant / linear-in-arg / linear-in-duration / linear-in-xyz models.
+- `GhostloopStore`, SQLite store for episodes / runs / comparisons.
 - `Trace.write_jsonl()` + `load_trace()` + `iter_events()` + `summarize_trace()`.
-- `query(trace, expr)` — small DSL over traces (comparison ops + `and`/`or`/`not`/`in`).
-- `diff_traces(a, b)` — structured diff for ablation studies.
+- `query(trace, expr)`, small DSL over traces (comparison ops + `and`/`or`/`not`/`in`).
+- `diff_traces(a, b)`, structured diff for ablation studies.
 
 ### Fleet + dashboard
 - `RobotHandle` / `FleetRegistry` / `FleetDispatcher` (FIRST_IDLE / ROUND_ROBIN / LEAST_BUSY).
-- `create_dashboard_app(store, fleet)` — read-only FastAPI surface over the SQLite store.
-- `StreamManager` + `attach_streaming(app)` — WebSocket trace streaming with bounded ring buffers.
+- `create_dashboard_app(store, fleet)`, read-only FastAPI surface over the SQLite store.
+- `StreamManager` + `attach_streaming(app)`, WebSocket trace streaming with bounded ring buffers.
 
 ### MCP + LLM integration
 - `mcp_server.py` exposes the runtime as a FastMCP server so Claude Desktop / Cursor / any MCP client can drive a robot through the safety pipeline.
@@ -188,11 +188,11 @@ PYTHONPATH=. python3 examples/bench_with_without_geofence.py
 PYTHONPATH=. python3 -m pytest tests/
 ```
 
-No dependencies beyond Python 3.10+. This proves the runtime, the safety pipeline, the bench harness, and the trace recorder — exactly the same code you'll point at a real arm later.
+No dependencies beyond Python 3.10+. This proves the runtime, the safety pipeline, the bench harness, and the trace recorder, exactly the same code you'll point at a real arm later.
 
 ### 2. Drive *any* robot from any chat client over MCP (10 minutes)
 
-ghostloop ships a single MCP server (`examples/mcp_robot.py`) that works with **every MCP-aware client** — the protocol is universal, so the same server speaks to Claude Desktop, Cursor, Continue, Cline, Zed, Gemini CLI, and any future client. Pick what you control via `GHOSTLOOP_PROFILE`:
+ghostloop ships a single MCP server (`examples/mcp_robot.py`) that works with **every MCP-aware client**, the protocol is universal, so the same server speaks to Claude Desktop, Cursor, Continue, Cline, Zed, Gemini CLI, and any future client. Pick what you control via `GHOSTLOOP_PROFILE`:
 
 | Profile | Robot | Primitives exposed |
 |---|---|---|
@@ -232,17 +232,17 @@ GHOSTLOOP_PROFILE=examples/custom_robot.yaml python3 examples/mcp_robot.py --sel
 **Step 2.** Install the MCP transport package:
 
 ```bash
-pip install ghostloop[mcp]      # or: pip install mcp
+pip install ghostloop[mcp] # or: pip install mcp
 ```
 
-**Step 3.** Wire it into your client. The same `{ command, args, env }` block works for every desktop MCP client — only the **path to the config file** differs:
+**Step 3.** Wire it into your client. The same `{ command, args, env }` block works for every desktop MCP client, only the **path to the config file** differs:
 
 | Client | macOS | Windows | Linux |
 |---|---|---|---|
 | Claude Desktop | `~/Library/Application Support/Claude/claude_desktop_config.json` | `%APPDATA%\Claude\claude_desktop_config.json` | `~/.config/Claude/claude_desktop_config.json` |
 | Cursor | `~/.cursor/mcp.json` (or project-local `.cursor/mcp.json`) | `%USERPROFILE%\.cursor\mcp.json` | `~/.cursor/mcp.json` |
 | Continue | `~/.continue/config.yaml` (under `mcpServers:`) | same | same |
-| Cline | VS Code `settings.json` → `cline.mcpServers` | same | same |
+| Cline | VS Code `settings.json` to `cline.mcpServers` | same | same |
 | Zed | `~/.config/zed/settings.json` (under `context_servers`) | same | same |
 | Gemini CLI | `~/.gemini/settings.json` (under `mcpServers`) | same | same |
 
@@ -250,31 +250,31 @@ Paste this block into the config file (replace the absolute path; pick a profile
 
 ```jsonc
 {
-  "mcpServers": {
-    "ghostloop": {
-      "command": "python3",
-      "args": ["/absolute/path/to/ghostloop/examples/mcp_robot.py"],
-      "env": {
-        "GHOSTLOOP_PROFILE": "franka_arm",
-        "GHOSTLOOP_BACKEND": "mock",
-        "GHOSTLOOP_TRANSPORT": "stdio",
-        "GHOSTLOOP_INSTRUCTIONS": "Optional: extra robot-specific guidance appended to the profile's instructions block."
-      }
-    }
-  }
+ "mcpServers": {
+ "ghostloop": {
+ "command": "python3",
+ "args": ["/absolute/path/to/ghostloop/examples/mcp_robot.py"],
+ "env": {
+ "GHOSTLOOP_PROFILE": "franka_arm",
+ "GHOSTLOOP_BACKEND": "mock",
+ "GHOSTLOOP_TRANSPORT": "stdio",
+ "GHOSTLOOP_INSTRUCTIONS": "Optional: extra robot-specific guidance appended to the profile's instructions block."
+ }
+ }
+ }
 }
 ```
 
-> 💡 On Windows, swap `python3` for `python` (or the absolute path to your interpreter, e.g. `C:\Python313\python.exe`). On macOS, use `python3` from Homebrew or pyenv. Continue + Zed use YAML / JSONC respectively but the field shape is identical.
+> On Windows, swap `python3` for `python` (or the absolute path to your interpreter, e.g. `C:\Python313\python.exe`). On macOS, use `python3` from Homebrew or pyenv. Continue + Zed use YAML / JSONC respectively but the field shape is identical.
 
 **Step 4.** Restart the client. New conversations get the tools: `list_primitives`, `step`, `move_to(x, y, z)`, `pick(object_id)`, `place()`, `scan(radius)`, `state`, `recent_trace(n)`. Try: *"Use the ghostloop tools to move to (0.4, 0.0, 0.5), then scan with radius 0.3, then move to (0.6, 0.2, 0.5)."* Watch the geofence reject targets outside [-0.6, 0.6].
 
-**Upgrade from mock to real physics (MuJoCo) — one env var:**
+**Upgrade from mock to real physics (MuJoCo), one env var:**
 
 ```jsonc
 "env": {
-  "GHOSTLOOP_BACKEND": "mujoco",
-  "GHOSTLOOP_MUJOCO_MODEL": "/absolute/path/to/franka_panda.xml"
+ "GHOSTLOOP_BACKEND": "mujoco",
+ "GHOSTLOOP_MUJOCO_MODEL": "/absolute/path/to/franka_panda.xml"
 }
 ```
 (`pip install ghostloop[mujoco]` first.)
@@ -283,48 +283,48 @@ Paste this block into the config file (replace the absolute path; pick a profile
 
 ```jsonc
 "env": {
-  "GHOSTLOOP_BACKEND": "ros2",
-  "GHOSTLOOP_ROS2_NODE": "ghostloop_arm",
-  "GHOSTLOOP_CMD_VEL": "/franka/cmd",
-  "GHOSTLOOP_JOINT_STATES": "/franka/joint_states",
-  "GHOSTLOOP_FORCE_TORQUE": "/franka/wrench"
+ "GHOSTLOOP_BACKEND": "ros2",
+ "GHOSTLOOP_ROS2_NODE": "ghostloop_arm",
+ "GHOSTLOOP_CMD_VEL": "/franka/cmd",
+ "GHOSTLOOP_JOINT_STATES": "/franka/joint_states",
+ "GHOSTLOOP_FORCE_TORQUE": "/franka/wrench"
 }
 ```
 
 Prerequisites: ROS 2 (`apt install ros-humble-desktop` on Ubuntu, the [Robotology Mac install](https://github.com/RoboStack/ros-humble) on macOS, [WSL2 + Ubuntu](https://docs.ros.org/en/humble/Installation/Alternatives/Ubuntu-Install-Binary.html) on Windows), your arm's ROS 2 driver running, and `source /opt/ros/humble/setup.bash` (or `setup.zsh` / `setup.ps1`) in the same shell that launches the client so the subprocess inherits `$AMENT_PREFIX_PATH`.
 
-> ⚠ **Before pointing this at a real robot:** edit your profile (or copy a preset to YAML and tweak it) — set `workspace_bounds` / `max_force_n` / `max_velocity` / `max_acceleration` to your hardware's safe envelope, list dangerous primitives under `hitl_primitives` so the operator approves each call interactively, and write robot-specific guidance into the `instructions:` block (e.g. *"never reach behind the base"*, *"battery below 20% triggers automatic land"*). Read the trace logs for the first dozen episodes; relax HITL only after you trust the model's behaviour.
+> **Before pointing this at a real robot:** edit your profile (or copy a preset to YAML and tweak it), set `workspace_bounds` / `max_force_n` / `max_velocity` / `max_acceleration` to your hardware's safe envelope, list dangerous primitives under `hitl_primitives` so the operator approves each call interactively, and write robot-specific guidance into the `instructions:` block (e.g. *"never reach behind the base"*, *"battery below 20% triggers automatic land"*). Read the trace logs for the first dozen episodes; relax HITL only after you trust the model's behaviour.
 
 #### Define your own robot
 
 Two ways to add a robot ghostloop doesn't already know about:
 
-**A. YAML profile** (no Python required) — copy `examples/custom_robot.yaml`, edit it, and point `GHOSTLOOP_PROFILE` at the path. The schema covers categories of standard primitives, your own custom primitives, composite macros, instructions for the LLM, workspace + force + velocity caps, denied / HITL operations, and the backend kind. The shipped sample defines a hospital medication-delivery robot — mobile base + arm, with custom `dispense_pill` and `alert_nurse` primitives and a `deliver_room` macro composed from existing primitives:
+**A. YAML profile** (no Python required), copy `examples/custom_robot.yaml`, edit it, and point `GHOSTLOOP_PROFILE` at the path. The schema covers categories of standard primitives, your own custom primitives, composite macros, instructions for the LLM, workspace + force + velocity caps, denied / HITL operations, and the backend kind. The shipped sample defines a hospital medication-delivery robot, mobile base + arm, with custom `dispense_pill` and `alert_nurse` primitives and a `deliver_room` macro composed from existing primitives:
 
 ```yaml
 name: medbot_floor3
 morphology: mobile_arm
 categories: [mobile_base, dexterous, sensing, generic]
 instructions: |
-  You are MedBot, hospital floor-3 medication delivery. NEVER drive faster
-  than 0.4 m/s. ALWAYS stop before extending the arm. ...
+ You are MedBot, hospital floor-3 medication delivery. NEVER drive faster
+ than 0.4 m/s. ALWAYS stop before extending the arm. ...
 workspace_bounds: [[-15, -15, 0], [15, 15, 1.6]]
 max_velocity: 0.4
 hitl_primitives: [set_gripper, dispense_pill]
 custom_primitives:
-  - module: examples.custom_robot_primitives
-    factory: dispense_pill
-  - module: examples.custom_robot_primitives
-    factory: alert_nurse
+ - module: examples.custom_robot_primitives
+ factory: dispense_pill
+ - module: examples.custom_robot_primitives
+ factory: alert_nurse
 composites:
-  - name: deliver_room
-    steps: [goto, take_photo, dispense_pill, alert_nurse]
+ - name: deliver_room
+ steps: [goto, take_photo, dispense_pill, alert_nurse]
 backend:
-  kind: ros2
-  kwargs: { node_name: medbot, cmd_vel_topic: /medbot/cmd_vel }
+ kind: ros2
+ kwargs: { node_name: medbot, cmd_vel_topic: /medbot/cmd_vel }
 ```
 
-**B. Code** — build a `RobotProfile` programmatically. Useful when your robot needs runtime state (a calibration matrix, a credential, dynamically-resolved topic names) that doesn't fit YAML:
+**B. Code**, build a `RobotProfile` programmatically. Useful when your robot needs runtime state (a calibration matrix, a credential, dynamically-resolved topic names) that doesn't fit YAML:
 
 ```python
 from ghostloop.profiles import RobotProfile, build_runtime_from_profile
@@ -332,20 +332,20 @@ from ghostloop.primitives import drive, set_gripper
 from my_robot.primitives import dispense_pill, alert_nurse
 
 profile = RobotProfile(
-    name="medbot",
-    morphology="mobile_arm",
-    primitives=[drive(), set_gripper(), dispense_pill(), alert_nurse()],
-    instructions="You are MedBot...",
-    workspace_bounds=((-15, -15, 0), (15, 15, 1.6)),
-    max_velocity=0.4,
-    hitl_primitives=["dispense_pill"],
-    backend_kind="ros2",
-    backend_kwargs={"node_name": "medbot", "cmd_vel_topic": "/medbot/cmd_vel"},
+ name="medbot",
+ morphology="mobile_arm",
+ primitives=[drive(), set_gripper(), dispense_pill(), alert_nurse()],
+ instructions="You are MedBot...",
+ workspace_bounds=((-15, -15, 0), (15, 15, 1.6)),
+ max_velocity=0.4,
+ hitl_primitives=["dispense_pill"],
+ backend_kind="ros2",
+ backend_kwargs={"node_name": "medbot", "cmd_vel_topic": "/medbot/cmd_vel"},
 )
 runtime = build_runtime_from_profile(profile)
 ```
 
-Custom Primitive factories follow a stable contract: a function returning `Primitive(name, call, description, arg_schema)`. The `call` body talks to your hardware however you need it to — ROS 2 publisher, vendor SDK, raw serial, REST endpoint. See `examples/custom_robot_primitives.py` for two worked examples (`dispense_pill`, `alert_nurse`).
+Custom Primitive factories follow a stable contract: a function returning `Primitive(name, call, description, arg_schema)`. The `call` body talks to your hardware however you need it to, ROS 2 publisher, vendor SDK, raw serial, REST endpoint. See `examples/custom_robot_primitives.py` for two worked examples (`dispense_pill`, `alert_nurse`).
 
 ### 3. Mobile + remote MCP (HTTP transport)
 
@@ -355,7 +355,7 @@ For mobile chat apps (and any client that doesn't run on the same machine as the
 # macOS / Linux
 GHOSTLOOP_BACKEND=mock GHOSTLOOP_TRANSPORT=streamable-http \
 GHOSTLOOP_HOST=0.0.0.0 GHOSTLOOP_PORT=8765 \
-  python3 examples/claude_desktop_mcp_arm.py
+ python3 examples/claude_desktop_mcp_arm.py
 
 # Windows PowerShell
 $env:GHOSTLOOP_TRANSPORT='streamable-http'; $env:GHOSTLOOP_HOST='0.0.0.0'; $env:GHOSTLOOP_PORT='8765'
@@ -366,17 +366,17 @@ Then configure remote-MCP-capable clients with the **URL form** (no `command`/`a
 
 ```jsonc
 {
-  "mcpServers": {
-    "ghostloop": { "url": "http://your-robot-host.local:8765/mcp" }
-  }
+ "mcpServers": {
+ "ghostloop": { "url": "http://your-robot-host.local:8765/mcp" }
+ }
 }
 ```
 
-Mobile MCP clients (Claude iOS once it ships remote MCP, plus the growing crop of third-party MCP-aware iOS / Android chat apps) connect via the same URL — no app-side install. For a custom mobile app, use any MCP TypeScript / Swift / Kotlin SDK from [modelcontextprotocol.io](https://modelcontextprotocol.io). The HTTP wire format is the same.
+Mobile MCP clients (Claude iOS once it ships remote MCP, plus the growing crop of third-party MCP-aware iOS / Android chat apps) connect via the same URL, no app-side install. For a custom mobile app, use any MCP TypeScript / Swift / Kotlin SDK from [modelcontextprotocol.io](https://modelcontextprotocol.io). The HTTP wire format is the same.
 
-> ⚠ Bind to `0.0.0.0` only on a private network or behind authentication. The default `127.0.0.1` is loopback-only (safer). For internet-exposed setups, put a reverse proxy with TLS + auth in front, or use the production dashboard's `StaticTokenAuth` pattern.
+> Bind to `0.0.0.0` only on a private network or behind authentication. The default `127.0.0.1` is loopback-only (safer). For internet-exposed setups, put a reverse proxy with TLS + auth in front, or use the production dashboard's `StaticTokenAuth` pattern.
 
-### 4. Without MCP — direct OpenAI-compatible function calling
+### 4. Without MCP, direct OpenAI-compatible function calling
 
 Already have a model running and don't want to bother with MCP? `examples/direct_llm_arm.py` skips the protocol entirely and uses ghostloop's `LLMPolicy` to drive any OpenAI-compatible chat endpoint via native function calling. Tested against:
 
@@ -390,19 +390,19 @@ Already have a model running and don't want to bother with MCP? `examples/direct
 ```bash
 OPENAI_BASE_URL=https://api.openai.com/v1 OPENAI_API_KEY=sk-... \
 OPENAI_MODEL=gpt-4o-mini \
-  python3 examples/direct_llm_arm.py
+ python3 examples/direct_llm_arm.py
 
 # Or local Ollama:
 OPENAI_BASE_URL=http://localhost:11434/v1 OPENAI_API_KEY=ollama \
 OPENAI_MODEL=qwen2.5:14b \
-  python3 examples/direct_llm_arm.py
+ python3 examples/direct_llm_arm.py
 ```
 
 Same Backend choice (Mock / MuJoCo / ROS 2), same safety pipeline, same trace recorder. Only the LLM-to-tool plumbing differs: in-process via `LLMPolicy` instead of MCP wire protocol.
 
 ### 5. Run programmatically
 
-For everything else — bench harnesses, training loops, post-hoc analysis — use ghostloop as a library. Examples below.
+For everything else, bench harnesses, training loops, post-hoc analysis, use ghostloop as a library. Examples below.
 
 ## Library API examples
 
@@ -415,19 +415,19 @@ from ghostloop.primitives import move_to, pick, place, scan
 
 registry = PrimitiveRegistry([move_to(), scan(), pick(), place()])
 runtime = Runtime(
-    backend=MockBackend(),
-    registry=registry,
-    policy_pipeline=PolicyPipeline(gates=[
-        GeofenceGate(min_corner=(-1, -1, 0), max_corner=(1, 1, 1)),
-    ]),
+ backend=MockBackend(),
+ registry=registry,
+ policy_pipeline=PolicyPipeline(gates=[
+ GeofenceGate(min_corner=(-1, -1, 0), max_corner=(1, 1, 1)),
+ ]),
 )
 
 summary = llm_policy_loop(
-    registry=registry,
-    runtime=runtime,
-    goal="Pick widget-7 from (0.4, 0.2, 0.1) and place it at (-0.4, 0.2, 0.1).",
-    config=LLMPolicyConfig(base_url="http://localhost:11434/v1", model="qwen2.5:14b"),
-    max_steps=16,
+ registry=registry,
+ runtime=runtime,
+ goal="Pick widget-7 from (0.4, 0.2, 0.1) and place it at (-0.4, 0.2, 0.1).",
+ config=LLMPolicyConfig(base_url="http://localhost:11434/v1", model="qwen2.5:14b"),
+ max_steps=16,
 )
 runtime.trace.write_jsonl("episode.jsonl")
 ```
@@ -450,12 +450,12 @@ Defaults to `claude-opus-5-5` with server-side refusal fallback on. Set `fallbac
 from ghostloop import PolicyPipeline, PrimitiveRegistry, Runtime, Intent
 from ghostloop.backends import create_backend
 
-binding = create_backend("mujoco:ur5e")          # Menagerie model, IK control, gravity comp
+binding = create_backend("mujoco:ur5e") # Menagerie model, IK control, gravity comp
 runtime = Runtime(backend=binding.backend, registry=PrimitiveRegistry(binding.primitives),
-                  policy_pipeline=PolicyPipeline())
+ policy_pipeline=PolicyPipeline())
 
-runtime.step(Intent("move_to", {"x": 0.5, "y": 0.2, "z": 0.3}))   # metres, robot base frame
-runtime.step(Intent("move_to", {"x": 3.0, "y": 0.0, "z": 0.0}))   # ERROR: unreachable, arm stays put
+runtime.step(Intent("move_to", {"x": 0.5, "y": 0.2, "z": 0.3})) # metres, robot base frame
+runtime.step(Intent("move_to", {"x": 3.0, "y": 0.0, "z": 0.0})) # ERROR: unreachable, arm stays put
 ```
 
 Models from the [MuJoCo Menagerie](https://github.com/google-deepmind/mujoco_menagerie) drop in directly. UR5e, UR10e and Panda have IK defaults; any other MJCF works with `MuJoCoBackend(model_path=..., site=..., control="ik")`.
@@ -467,13 +467,13 @@ from ghostloop.bench.catalogue import PRESETS
 from ghostloop.bench.cross import cross_backend_compare
 
 report = cross_backend_compare(PRESETS["reach_8"], "mujoco:ur5e", "yoursim:ur5e",
-                               seeds=[0, 1, 2], tolerance=0.01)
-report.write("xbench-out")          # report.md, report.json, traces/a/*.jsonl, traces/b/*.jsonl
+ seeds=[0, 1, 2], tolerance=0.01)
+report.write("xbench-out") # report.md, report.json, traces/a/*.jsonl, traces/b/*.jsonl
 ```
 
 Both sides run the same seeded targets in a canonical frame mapped onto the embodiment's workspace, so episodes pair one to one. Any registered backend works; see [docs/BACKENDS.md](docs/BACKENDS.md) to add one.
 
-### Counterfactual replay — "what would the new policy have done?"
+### Counterfactual replay, "what would the new policy have done?"
 
 ```python
 from ghostloop.counterfactual import replay_with_policy
@@ -482,8 +482,8 @@ from ghostloop.traces import load_trace
 original = load_trace("episode.jsonl")
 
 def new_policy(state_before):
-    # any callable mapping state -> Intent | None
-    return Intent("scan", {"radius": 0.3})
+ # any callable mapping state -> Intent | None
+ return Intent("scan", {"radius": 0.3})
 
 cf = replay_with_policy(original, new_policy, new_policy_name="more-cautious")
 print(cf.divergence_rate, cf.first_divergence_step)
@@ -498,7 +498,7 @@ from ghostloop.properties import StaysInsideWorkspace
 
 prop = StaysInsideWorkspace(min_corner=(-1, -1, 0), max_corner=(1, 1, 1))
 analysis = attribute_failure(failing_trace, prop)
-print(analysis.render_md())          # ranked top-K root causes
+print(analysis.render_md()) # ranked top-K root causes
 
 cause_set = minimal_cause_set(failing_trace, prop, max_set_size=3)
 ```
@@ -509,9 +509,9 @@ cause_set = minimal_cause_set(failing_trace, prop, max_set_size=3)
 from ghostloop.judges import LLMJudge, LLMJudgeConfig
 
 class GhostLMClient:
-    def chat(self, messages, **kwargs):
-        # adapt your chat endpoint here
-        ...
+ def chat(self, messages, **kwargs):
+ # adapt your chat endpoint here
+ ...
 
 judge = LLMJudge(client=GhostLMClient(), config=LLMJudgeConfig(model="ghostlm-v0.9-chat"))
 judgement = judge.score(trace)
@@ -524,15 +524,15 @@ print(judgement.label, judgement.score, judgement.rubric_scores)
 from ghostloop.bench import cma_es_seeds
 
 def perturb(base_episode, sample):
-    # return a copy of base_episode with backend initial state shifted by `sample`
-    ...
+ # return a copy of base_episode with backend initial state shifted by `sample`
+ ...
 
 results = cma_es_seeds(
-    base_episode, perturb,
-    parameter_ranges={"x0": (-1.0, 1.0), "y0": (-1.0, 1.0)},
-    n_iterations=8, population_size=8, seed=42,
+ base_episode, perturb,
+ parameter_ranges={"x0": (-1.0, 1.0), "y0": (-1.0, 1.0)},
+ n_iterations=8, population_size=8, seed=42,
 )
-worst = results[:5]    # promote into your regression bench
+worst = results[:5] # promote into your regression bench
 ```
 
 ### Property mining
@@ -543,8 +543,8 @@ from ghostloop.properties import mine_properties
 corpus = [load_trace(p) for p in successful_traces_paths]
 candidates = mine_properties(corpus, min_support=0.9)
 for mp in candidates:
-    print(mp.pattern, mp.description, mp.support)
-    promoted = mp.promote()        # a real Property ready for the engine
+ print(mp.pattern, mp.description, mp.support)
+ promoted = mp.promote() # a real Property ready for the engine
 ```
 
 ### Sim-to-Real bench
@@ -553,12 +553,12 @@ for mp in candidates:
 from ghostloop.bench import Sim2RealBench
 
 bench = Sim2RealBench(
-    sim_episodes=eps_sim,
-    real_episodes=eps_real,
-    sim_label="mujoco", real_label="randomized_mujoco",
+ sim_episodes=eps_sim,
+ real_episodes=eps_real,
+ sim_label="mujoco", real_label="randomized_mujoco",
 )
 report = bench.run()
-print(report.render_md())          # transfer gap + McNemar + KL action-distribution
+print(report.render_md()) # transfer gap + McNemar + KL action-distribution
 ```
 
 ### Energy ledger
@@ -581,12 +581,12 @@ graph = SkillGraph()
 graph.add(skill_from_primitive(move_to()))
 graph.add(skill_from_primitive(scan(), prerequisites=["move_to"]))
 graph.validate()
-order = graph.topological_order()        # ['move_to', 'scan']
+order = graph.topological_order() # ['move_to', 'scan']
 
 reg = MorphologyRegistry()
 reg.register("franka", "pick", franka_pick_factory)
-reg.register("ur5e",   "pick", ur5e_pick_factory)
-prims = reg.build("franka", ["pick"])    # robot-specific primitives
+reg.register("ur5e", "pick", ur5e_pick_factory)
+prims = reg.build("franka", ["pick"]) # robot-specific primitives
 ```
 
 ## Roadmap
@@ -611,164 +611,164 @@ prims = reg.build("franka", ["pick"])    # robot-specific primitives
 
 ```
 ghostloop/
-  __init__.py                public API surface, version
-  core.py                    Intent / Primitive / Runtime / Trace / Decision / Backend / MockBackend
-  async_runtime.py           AsyncRuntime + control_loop(rate_hz)
-  observations.py            ObservationBuffer (deque-based short-term memory)
-  store.py                   GhostloopStore — SQLite episodes / runs / comparisons
-  mcp_server.py              FastMCP server exposing Runtime as MCP tools
-  testing.py                 backend conformance kit                          (v1.1)
-  counterfactual.py          replay_with_policy + CounterfactualTrace        (v0.10)
-  causal.py                  attribute_failure + minimal_cause_set            (v0.10)
+ __init__.py public API surface, version
+ core.py Intent / Primitive / Runtime / Trace / Decision / Backend / MockBackend
+ async_runtime.py AsyncRuntime + control_loop(rate_hz)
+ observations.py ObservationBuffer (deque-based short-term memory)
+ store.py GhostloopStore, SQLite episodes / runs / comparisons
+ mcp_server.py FastMCP server exposing Runtime as MCP tools
+ testing.py backend conformance kit (v1.1)
+ counterfactual.py replay_with_policy + CounterfactualTrace (v0.10)
+ causal.py attribute_failure + minimal_cause_set (v0.10)
 
-  policies/
-    deny_list.py             DenyListGate
-    rate_limit.py            RateLimitGate
-    geofence.py              GeofenceGate
-    force_cap.py             ForceCapGate
-    human_in_the_loop.py     HumanInTheLoopGate + cli_approver
-    workspace.py             WorkspaceModel + ObstacleAvoidanceGate
-    sdf.py                   HalfSpace / ConvexPolytope / signed_distance     (v0.7)
-    urdf.py                  workspace_from_urdf                              (v0.8)
-    cooldown.py              CooldownGate                                     (v0.7)
-    time_window.py           TimeWindowGate + Window                          (v0.7)
-    smoothing.py             ActionSmoothingGate + smooth_target              (v0.9)
-    safe_projection.py       project_to_workspace + project_to_sdf            (v0.9)
-    retry.py                 RetryPolicy + transient-error helpers
-    llm.py                   LLMPolicy + LLMPolicyConfig + llm_policy_loop
-    claude.py                ClaudePolicy (Anthropic SDK)                     (v1.1)
-    vla.py                   VLAPolicy + DeltaXYZDecoder
+ policies/
+ deny_list.py DenyListGate
+ rate_limit.py RateLimitGate
+ geofence.py GeofenceGate
+ force_cap.py ForceCapGate
+ human_in_the_loop.py HumanInTheLoopGate + cli_approver
+ workspace.py WorkspaceModel + ObstacleAvoidanceGate
+ sdf.py HalfSpace / ConvexPolytope / signed_distance (v0.7)
+ urdf.py workspace_from_urdf (v0.8)
+ cooldown.py CooldownGate (v0.7)
+ time_window.py TimeWindowGate + Window (v0.7)
+ smoothing.py ActionSmoothingGate + smooth_target (v0.9)
+ safe_projection.py project_to_workspace + project_to_sdf (v0.9)
+ retry.py RetryPolicy + transient-error helpers
+ llm.py LLMPolicy + LLMPolicyConfig + llm_policy_loop
+ claude.py ClaudePolicy (Anthropic SDK) (v1.1)
+ vla.py VLAPolicy + DeltaXYZDecoder
 
-  primitives/
-    motion.py                move_to / scan
-    manipulation.py          pick / place
-    trajectory.py            follow_trajectory + linear_interpolate
-    composite.py             composite_primitive factory                     (v0.7)
-    morphology.py            MorphologyRegistry — cross-embodiment           (v0.10)
-    library.py               cross-morphology primitive catalogue —          (v1.0)
-                             mobile_base / quadruped / humanoid / aerial /
-                             dexterous / sensing / generic
+ primitives/
+ motion.py move_to / scan
+ manipulation.py pick / place
+ trajectory.py follow_trajectory + linear_interpolate
+ composite.py composite_primitive factory (v0.7)
+ morphology.py MorphologyRegistry, cross-embodiment (v0.10)
+ library.py cross-morphology primitive catalogue, (v1.0)
+ mobile_base / quadruped / humanoid / aerial /
+ dexterous / sensing / generic
 
-  profiles/                                                                  (v1.0)
-    core.py                  RobotProfile + YAML loader + runtime builder
-    presets.py               franka_arm / turtlebot / spot / tello /
-                             stretch / humanoid_demo
+ profiles/ (v1.0)
+ core.py RobotProfile + YAML loader + runtime builder
+ presets.py franka_arm / turtlebot / spot / tello /
+ stretch / humanoid_demo
 
-  backends/
-    mujoco.py                MuJoCoBackend                                   (v0.2)
-    pybullet.py              PyBulletBackend                                 (v0.3)
-    gymnasium.py             GymnasiumBackend (Farama Gym ecosystem)         (v0.7)
-    ros2.py                  ROS2Backend (rclpy adapter)                     (v0.9)
-    randomized.py            RandomizedBackend (sim2real wrapper)            (v0.8)
-    menagerie.py             MuJoCo Menagerie auto-clone                     (v0.4)
-    registry.py              create_backend + plugin entry points            (v1.1)
+ backends/
+ mujoco.py MuJoCoBackend (v0.2)
+ pybullet.py PyBulletBackend (v0.3)
+ gymnasium.py GymnasiumBackend (Farama Gym ecosystem) (v0.7)
+ ros2.py ROS2Backend (rclpy adapter) (v0.9)
+ randomized.py RandomizedBackend (sim2real wrapper) (v0.8)
+ menagerie.py MuJoCo Menagerie auto-clone (v0.4)
+ registry.py create_backend + plugin entry points (v1.1)
 
-  bench/
-    episode.py               Episode + EpisodeRunner + EpisodeResult         (v0.2)
-    report.py                RunReport + wilson_ci + summarize               (v0.2)
-    compare.py               paired_compare + mcnemar_p + cohens_h            (v0.2)
-    catalogue.py             preset_reach_8 + preset_pick_and_place_4 + …    (v0.4)
-    reward_shaper.py         RewardShaper + OnPrimitive / OnDecision / …     (v0.9)
-    sim2real.py              Sim2RealBench + Sim2RealReport                   (v0.9)
-    adversarial.py           random_seeds / grid_seeds / cma_es_seeds        (v0.10)
-    frames.py                Workspace canonical frame + FramedBackend       (v1.1)
-    cross.py                 cross_backend_compare + CrossBackendReport      (v1.1)
+ bench/
+ episode.py Episode + EpisodeRunner + EpisodeResult (v0.2)
+ report.py RunReport + wilson_ci + summarize (v0.2)
+ compare.py paired_compare + mcnemar_p + cohens_h (v0.2)
+ catalogue.py preset_reach_8 + preset_pick_and_place_4 + … (v0.4)
+ reward_shaper.py RewardShaper + OnPrimitive / OnDecision / … (v0.9)
+ sim2real.py Sim2RealBench + Sim2RealReport (v0.9)
+ adversarial.py random_seeds / grid_seeds / cma_es_seeds (v0.10)
+ frames.py Workspace canonical frame + FramedBackend (v1.1)
+ cross.py cross_backend_compare + CrossBackendReport (v1.1)
 
-  properties/
-    core.py                  Property + PropertyEngine + Severity            (v0.5)
-    builtins.py              StaysInsideWorkspace / NeverHoldsTwoObjects/…   (v0.5)
-    combinators.py           AndProperty / OrProperty / NotProperty          (v0.6)
-    temporal.py              Always / Eventually / Until (STL)               (v0.8)
-    mining.py                mine_properties + MinedProperty                 (v0.10)
+ properties/
+ core.py Property + PropertyEngine + Severity (v0.5)
+ builtins.py StaysInsideWorkspace / NeverHoldsTwoObjects/… (v0.5)
+ combinators.py AndProperty / OrProperty / NotProperty (v0.6)
+ temporal.py Always / Eventually / Until (STL) (v0.8)
+ mining.py mine_properties + MinedProperty (v0.10)
 
-  judges/
-    llm_judge.py             LLMJudge + LLMJudgeConfig + parse_judgement     (v0.10)
-    heuristic.py             HeuristicJudge + rule predicates                 (v0.10)
+ judges/
+ llm_judge.py LLMJudge + LLMJudgeConfig + parse_judgement (v0.10)
+ heuristic.py HeuristicJudge + rule predicates (v0.10)
 
-  skills/
-    graph.py                 SkillGraph + Skill + topological order           (v0.10)
+ skills/
+ graph.py SkillGraph + Skill + topological order (v0.10)
 
-  missions/
-    core.py                  Mission + Step + MissionRunner + MissionResult   (v0.7)
+ missions/
+ core.py Mission + Step + MissionRunner + MissionResult (v0.7)
 
-  fleet/
-    core.py                  RobotHandle + FleetRegistry + FleetDispatcher    (v0.6)
+ fleet/
+ core.py RobotHandle + FleetRegistry + FleetDispatcher (v0.6)
 
-  dashboard/
-    api.py                   FastAPI factory + healthz + store endpoints      (v0.6)
-    streaming.py             StreamManager + WebSocket /ws/v1/stream          (v0.7)
+ dashboard/
+ api.py FastAPI factory + healthz + store endpoints (v0.6)
+ streaming.py StreamManager + WebSocket /ws/v1/stream (v0.7)
 
-  planning/
-    core.py                  TaskPlanner + TaskStep                          (v0.5)
-    builtin.py               sequential_planner / fixed_plan                  (v0.5)
-    llm_planner.py           LLMPlanner (single-shot full-plan emission)      (v0.6)
+ planning/
+ core.py TaskPlanner + TaskStep (v0.5)
+ builtin.py sequential_planner / fixed_plan (v0.5)
+ llm_planner.py LLMPlanner (single-shot full-plan emission) (v0.6)
 
-  sensors/
-    camera.py                Camera Protocol + MockCamera + capture_camera   (v0.5)
+ sensors/
+ camera.py Camera Protocol + MockCamera + capture_camera (v0.5)
 
-  telemetry/
-    otel.py                  step_span + record_decision + record_result    (v0.5)
-    energy.py                EnergyLedger + PrimitiveEnergyModel             (v0.10)
+ telemetry/
+ otel.py step_span + record_decision + record_result (v0.5)
+ energy.py EnergyLedger + PrimitiveEnergyModel (v0.10)
 
-  training/
-    core.py                  SafeRolloutCollector + LagrangianMultiplier     (v0.8)
-    hindsight.py             HER relabeling + sparse_indicator_reward        (v0.10)
+ training/
+ core.py SafeRolloutCollector + LagrangianMultiplier (v0.8)
+ hindsight.py HER relabeling + sparse_indicator_reward (v0.10)
 
-  traces/
-    replay.py                load_trace + iter_events + summarize_trace      (v0.4)
-    diff.py                  diff_traces + StepDiff + TraceDiff              (v0.6)
-    query.py                 query DSL with comparison ops + and/or/not/in   (v0.8)
+ traces/
+ replay.py load_trace + iter_events + summarize_trace (v0.4)
+ diff.py diff_traces + StepDiff + TraceDiff (v0.6)
+ query.py query DSL with comparison ops + and/or/not/in (v0.8)
 
 examples/
-  pick_and_place.py                    scripted end-to-end demo
-  bench_with_without_geofence.py       paired-comparison demo
-  mcp_robot.py                         general MCP server — picks profile   (v1.0)
-                                       via GHOSTLOOP_PROFILE; works with
-                                       arms, mobile bases, quadrupeds,
-                                       drones, humanoids, custom robots
-  claude_desktop_mcp_arm.py            arm-specific MCP example (legacy)    (v1.0)
-  claude_desktop_config.json           cross-client + cross-OS config       (v1.0)
-                                       reference (Claude Desktop / Cursor /
-                                       Continue / Cline / Zed / Gemini CLI)
-  custom_robot.yaml                    sample profile YAML —                (v1.0)
-                                       hospital medication-delivery robot
-                                       with custom primitives + composites
-  custom_robot_primitives.py           sample custom Primitive factories    (v1.0)
-                                       (dispense_pill, alert_nurse)
-  cross_backend_bench.py               cross-backend paired report          (v1.1)
-  direct_llm_arm.py                    direct OpenAI-compatible function    (v1.0)
-                                       calling — works with OpenAI /
-                                       Anthropic / Gemini / Groq / Ollama
-                                       / vLLM / GhostLM
+ pick_and_place.py scripted end-to-end demo
+ bench_with_without_geofence.py paired-comparison demo
+ mcp_robot.py general MCP server, picks profile (v1.0)
+ via GHOSTLOOP_PROFILE; works with
+ arms, mobile bases, quadrupeds,
+ drones, humanoids, custom robots
+ claude_desktop_mcp_arm.py arm-specific MCP example (legacy) (v1.0)
+ claude_desktop_config.json cross-client + cross-OS config (v1.0)
+ reference (Claude Desktop / Cursor /
+ Continue / Cline / Zed / Gemini CLI)
+ custom_robot.yaml sample profile YAML, (v1.0)
+ hospital medication-delivery robot
+ with custom primitives + composites
+ custom_robot_primitives.py sample custom Primitive factories (v1.0)
+ (dispense_pill, alert_nurse)
+ cross_backend_bench.py cross-backend paired report (v1.1)
+ direct_llm_arm.py direct OpenAI-compatible function (v1.0)
+ calling, works with OpenAI /
+ Anthropic / Gemini / Groq / Ollama
+ / vLLM / GhostLM
 
-tests/                                  411 tests (some skip without optional extras)
-  test_core.py                          23
-  test_llm_policy.py                    19
-  test_bench.py                         22
-  test_mujoco_backend.py                8
-  test_rt_safety_equivalence.py         2
-  test_v03_additions.py                 29
-  test_v04_additions.py                 21
-  test_v05_additions.py                 32
-  test_v06_additions.py                 38
-  test_v07_additions.py                 29
-  test_v08_additions.py                 28
-  test_v09_additions.py                 25
-  test_v10_additions.py                 33
-  test_v10_v1_additions.py              18
-  test_v102_additions.py                26
-  test_v110_additions.py                39
-  test_profiles.py                      19
+tests/ 411 tests (some skip without optional extras)
+ test_core.py 23
+ test_llm_policy.py 19
+ test_bench.py 22
+ test_mujoco_backend.py 8
+ test_rt_safety_equivalence.py 2
+ test_v03_additions.py 29
+ test_v04_additions.py 21
+ test_v05_additions.py 32
+ test_v06_additions.py 38
+ test_v07_additions.py 29
+ test_v08_additions.py 28
+ test_v09_additions.py 25
+ test_v10_additions.py 33
+ test_v10_v1_additions.py 18
+ test_v102_additions.py 26
+ test_v110_additions.py 39
+ test_profiles.py 19
 
-assets/                                  brand mark + wordmark variants
-docs/                                    architecture / migration / brand notes
+assets/ brand mark + wordmark variants
+docs/ architecture / migration / brand notes
 ```
 
 ## Why this is novel
 
-There are robot frameworks. There are agent frameworks. There is no robot framework that **treats robots as a model with a tool registry, a fail-closed safety pipeline, a structured trace log, statistical bench rigor, AND a layer of post-hoc analysis** (counterfactual replay, causal attribution, LLM-as-judge, property mining, adversarial fuzzing) — the same shape that's now standard for LLM-driven cybersec agents (`secure-mcp`, `ghostguard`, `GhostAgent`).
+There are robot frameworks. There are agent frameworks. There is no robot framework that **treats robots as a model with a tool registry, a fail-closed safety pipeline, a structured trace log, statistical bench rigor, AND a layer of post-hoc analysis** (counterfactual replay, causal attribution, LLM-as-judge, property mining, adversarial fuzzing), the same shape that's now standard for LLM-driven cybersec agents (`secure-mcp`, `ghostguard`, `GhostAgent`).
 
-The thesis: as VLA models become the policy substrate, the runtime around them needs the same rigor we already apply to LLM tool use, plus the analytical tooling — counterfactuals, causal attribution, judge models — that LLM safety has been building for years. ghostloop is that runtime.
+The thesis: as VLA models become the policy substrate, the runtime around them needs the same rigor we already apply to LLM tool use, plus the analytical tooling, counterfactuals, causal attribution, judge models, that LLM safety has been building for years. ghostloop is that runtime.
 
 ## License
 

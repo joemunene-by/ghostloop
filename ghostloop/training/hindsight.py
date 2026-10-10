@@ -54,10 +54,10 @@ def hindsight_relabel(
 
     Args:
         rollout: source trajectory.
-        goal_extractor: ``(obs) -> goal`` — pulls the goal-relevant
+        goal_extractor: ``(obs) -> goal``, pulls the goal-relevant
             field out of an observation. Often this is just an
             attribute select like ``lambda o: o["position"]``.
-        reward_fn: ``(achieved, goal) -> float`` — sparse +1 / 0 in
+        reward_fn: ``(achieved, goal) -> float``, sparse +1 / 0 in
             the original HER paper, but supports any dense fn.
         strategy: how to pick the achieved state for each transition.
         n_per_transition: how many extra HER transitions to spawn per

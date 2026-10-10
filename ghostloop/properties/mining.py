@@ -1,4 +1,4 @@
-"""Property mining — auto-discover invariants from a corpus of traces.
+"""Property mining, auto-discover invariants from a corpus of traces.
 
 Hand-authoring properties is a discipline; not every team has the
 patience. Property mining looks at a corpus of *successful* traces
@@ -119,7 +119,7 @@ def _make_followup_property(x: str, y: str, window_s: float):
     def _factory() -> Property:
         # "Always (when intent.name == x, intent_named(y) holds within window)"
         # is non-trivial in our STL; approximate as "Always intent_named(x or y)
-        # over a 0-window" — really we just want: "every time x fires, y was
+        # over a 0-window", really we just want: "every time x fires, y was
         # in a recent window". Use a custom Property.
         @dataclass
         class _Followup:
@@ -288,7 +288,7 @@ def mine_properties(
 
     Args:
         traces: corpus of recorded traces. Mining works best on
-            "known-good" traces — passing in failed runs pollutes the
+            "known-good" traces, passing in failed runs pollutes the
             statistics.
         window_s: temporal window for follow-up pattern mining.
         min_support: minimum fraction of traces where a pattern must

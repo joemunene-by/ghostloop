@@ -1,7 +1,7 @@
 """Declarative safety properties.
 
 Runtime gates inspect ONE intent at a time. Properties are higher-level
-invariants that span the trace — they let you assert "the robot never
+invariants that span the trace, they let you assert "the robot never
 holds two objects at once", "the end-effector stays inside the workspace
 across the entire episode", "no two consecutive steps emit the same
 intent without an intervening observation". Properties don't block at

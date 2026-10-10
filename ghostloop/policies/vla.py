@@ -2,12 +2,12 @@
 
 VLA models output continuous action vectors (joint deltas, end-effector
 twists, gripper commands) at a fixed dimensionality. ghostloop's runtime
-operates on Intents — ``move_to``, ``pick``, ``scan``. The adapter
+operates on Intents, ``move_to``, ``pick``, ``scan``. The adapter
 bridges the two: take an action vector, decode it into an Intent the
 registry knows about, and let the safety pipeline gate it like any other
 agent emission.
 
-The model interface is deliberately abstract — pass anything callable
+The model interface is deliberately abstract, pass anything callable
 ``(observation) -> action_vector`` and a matching ``ActionDecoder``.
 This works for:
 
@@ -74,7 +74,7 @@ class DeltaXYZDecoder:
             and float(action[self.gripper_dim]) > self.gripper_threshold
         )
 
-        # Gripper transitions take priority — they're discrete events, not no-ops.
+        # Gripper transitions take priority, they're discrete events, not no-ops.
         if gripper_close and not self.last_gripper:
             self.last_gripper = True
             return Intent(
@@ -90,7 +90,7 @@ class DeltaXYZDecoder:
                 rationale="VLA gripper transition: close -> open",
             )
 
-        # Position delta — skip if below deadband.
+        # Position delta, skip if below deadband.
         if max(abs(dx), abs(dy), abs(dz)) < self.deadband:
             return None
         pos = state.get("position", [0.0, 0.0, 0.0])

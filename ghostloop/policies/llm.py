@@ -112,7 +112,7 @@ def _build_tool_schema(registry: PrimitiveRegistry) -> list[dict[str, Any]]:
                 "parameters": primitive_input_schema(prim.arg_schema),
             },
         })
-    # Special "done" pseudo-tool — never registered as a Primitive, but the
+    # Special "done" pseudo-tool, never registered as a Primitive, but the
     # LLM needs a way to gracefully terminate the episode.
     tools.append({
         "type": "function",

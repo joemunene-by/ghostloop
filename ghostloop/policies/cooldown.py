@@ -2,7 +2,7 @@
 
 RateLimitGate caps total calls per minute. CooldownGate enforces a
 hard minimum delay between consecutive invocations of the same
-primitive — useful for "don't call the model again within 5 seconds"
+primitive, useful for "don't call the model again within 5 seconds"
 or "don't open the gripper twice in under 200ms" patterns where
 absolute spacing matters more than aggregate rate.
 """

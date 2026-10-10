@@ -1,4 +1,4 @@
-"""HeuristicJudge — rule-based trace scoring without an LLM in the loop.
+"""HeuristicJudge, rule-based trace scoring without an LLM in the loop.
 
 For environments where calling an LLM is undesirable (cost, latency,
 hermetic CI, air-gapped deployments) the rule-based judge gives you

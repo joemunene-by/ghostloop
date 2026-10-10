@@ -1,6 +1,6 @@
 """MuJoCoBackend: real physics via Google DeepMind's MuJoCo engine.
 
-Conditional import — the package itself imports cleanly without ``mujoco``
+Conditional import, the package itself imports cleanly without ``mujoco``
 on the system. ``MuJoCoBackend(...)`` raises ImportError with installation
 guidance only at construction time.
 
@@ -11,7 +11,7 @@ to a specific MuJoCoBackend instance and call its low-level helpers.
 
 For v0.2 we ship the backend + primitives; pre-canned models from the
 MuJoCo Menagerie (Franka Panda, UR5e, Stretch) are documented in the
-README rather than vendored — keeps the package small and avoids licence
+README rather than vendored, keeps the package small and avoids licence
 cross-contamination.
 """
 
@@ -381,7 +381,7 @@ def move_to() -> Primitive:
 
 
 def _scan_call(backend: MuJoCoBackend, radius: float = 1.0) -> Result:
-    """Read every body within ``radius`` of the end-effector — a stand-in
+    """Read every body within ``radius`` of the end-effector, a stand-in
     for vision/depth pipelines until v0.6 lands camera primitives.
     """
     ex, ey, ez = backend._end_effector_position()

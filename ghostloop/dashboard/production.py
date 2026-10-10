@@ -72,7 +72,7 @@ class StaticTokenAuth:
 
 @dataclass
 class AlarmRecord:
-    """One active alarm — operator queries / acks."""
+    """One active alarm, operator queries / acks."""
 
     id: str
     kind: str                    # e.g. "robot_offline", "high_violation_rate"
@@ -87,7 +87,7 @@ class AlarmRecord:
 
 @dataclass
 class AlarmRegistry:
-    """In-memory alarm bus — production deployments back with Redis."""
+    """In-memory alarm bus, production deployments back with Redis."""
 
     alarms: dict[str, AlarmRecord] = field(default_factory=dict)
     history: deque = field(default_factory=lambda: deque(maxlen=512))

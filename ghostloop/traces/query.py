@@ -1,4 +1,4 @@
-"""Trace query DSL — filter trace events with a small expression language.
+"""Trace query DSL, filter trace events with a small expression language.
 
 Once a deployment runs for a week the JSONL trace files become a few
 gigabytes. Grep is fine for one or two filters; once you're chaining
@@ -19,7 +19,7 @@ Examples:
     intent.name in ("move_to", "scan", "pick")
 
 Pure stdlib: tokenises with ``re``, parses recursive-descent, evaluates
-against each event. No eval / exec — every operator is dispatched
+against each event. No eval / exec, every operator is dispatched
 through a fixed table so the DSL is safe to expose over HTTP.
 """
 

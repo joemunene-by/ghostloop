@@ -1,4 +1,4 @@
-"""OpenTelemetry hooks — every Runtime.step emits a span when OTel is configured.
+"""OpenTelemetry hooks, every Runtime.step emits a span when OTel is configured.
 
 Conditional import: package itself never depends on opentelemetry. If the
 user has OTel installed AND has called ``configure_otel(...)`` (or set the

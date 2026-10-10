@@ -19,7 +19,7 @@ Three perturbations available:
 
 All deterministic given a `seed`; reproducibility for bench harnesses.
 
-Stdlib only (`random`, `time`, `dataclasses`) — no numpy required.
+Stdlib only (`random`, `time`, `dataclasses`), no numpy required.
 """
 
 from __future__ import annotations
@@ -63,7 +63,7 @@ class RandomizationConfig:
 class RandomizedBackend:
     """Wraps any Backend with reproducible perturbations.
 
-    The wrapped backend is treated opaquely — we only mutate snapshots
+    The wrapped backend is treated opaquely, we only mutate snapshots
     and intercept commonly-named action methods (``apply_action``,
     ``apply_target``, ``apply_torque``). Custom backend methods pass
     through untouched.
@@ -87,7 +87,7 @@ class RandomizedBackend:
             self.name = f"randomized<{self.base.name}>"
 
     # ------------------------------------------------------------------
-    # Backend Protocol — snapshot is the only required method.
+    # Backend Protocol, snapshot is the only required method.
     # ------------------------------------------------------------------
 
     def snapshot(self) -> dict[str, Any]:
@@ -120,7 +120,7 @@ class RandomizedBackend:
         return snap
 
     # ------------------------------------------------------------------
-    # Action interception — proxy any method that looks like an actuator
+    # Action interception, proxy any method that looks like an actuator
     # call, applying jitter / drop / sticky-repeat as configured.
     # ------------------------------------------------------------------
 
@@ -139,7 +139,7 @@ class RandomizedBackend:
         return {}
 
     def _maybe_apply(self, method: str, action: Any, *args: Any, **kwargs: Any) -> dict[str, Any]:
-        # Timing jitter — synthetic sleep before any call so policies
+        # Timing jitter, synthetic sleep before any call so policies
         # learn to tolerate variable control-loop period.
         if self.config.timing_jitter_s > 0:
             jitter = self._rng.uniform(
@@ -147,7 +147,7 @@ class RandomizedBackend:
             )
             if jitter > 0:
                 time.sleep(jitter)
-        # Action drop — silent no-op.
+        # Action drop, silent no-op.
         if self._rng.random() < self.config.action_drop_prob:
             self._drop_count += 1
             return {
@@ -155,7 +155,7 @@ class RandomizedBackend:
                 "dropped": True,
                 "drop_count": self._drop_count,
             }
-        # Sticky action — repeat the last successful action.
+        # Sticky action, repeat the last successful action.
         if (
             self._last_action is not None
             and self._rng.random() < self.config.sticky_action_prob
@@ -174,7 +174,7 @@ class RandomizedBackend:
         return result
 
     # ------------------------------------------------------------------
-    # Diagnostics — counters useful for sim2real progress reports.
+    # Diagnostics, counters useful for sim2real progress reports.
     # ------------------------------------------------------------------
 
     def stats(self) -> dict[str, int]:

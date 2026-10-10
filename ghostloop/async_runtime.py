@@ -1,4 +1,4 @@
-"""AsyncRuntime — coroutine-friendly runtime for control-loop and network workloads.
+"""AsyncRuntime, coroutine-friendly runtime for control-loop and network workloads.
 
 The synchronous ``Runtime`` is fine for sim demos, scripted tests, and any
 single-shot orchestration. Real deployments hit two cases that need async:
@@ -9,8 +9,8 @@ single-shot orchestration. Real deployments hit two cases that need async:
   2. Network policies / backends: LLMPolicy hits an HTTP endpoint, and
      real-hardware backends speak via ROS 2 / gRPC / MQTT.
 
-AsyncRuntime mirrors Runtime's surface — same ``Intent`` / ``Primitive`` /
-``PolicyPipeline`` / ``Backend`` / ``Trace`` types — but ``step`` is
+AsyncRuntime mirrors Runtime's surface, same ``Intent`` / ``Primitive`` /
+``PolicyPipeline`` / ``Backend`` / ``Trace`` types, but ``step`` is
 ``async def`` and supports ``AsyncPolicyGate`` protocol gates whose
 ``check`` method is awaitable. Synchronous gates are wrapped transparently
 so an existing PolicyPipeline mixes async and sync gates without changes.
@@ -99,7 +99,7 @@ class AsyncRuntime:
 
     Same constructor shape, but ``step`` is awaitable and supports both
     sync and async gates / primitives. Wrap an existing ``PolicyPipeline``
-    by passing it directly — the AsyncPolicyPipeline adapter handles the
+    by passing it directly, the AsyncPolicyPipeline adapter handles the
     sync gates transparently.
     """
 

@@ -34,7 +34,7 @@ class PlanResult:
 class Planner(Protocol):
     """A high-level goal -> Intent sequence decomposer.
 
-    Pure function — no runtime state, no side effects. The runtime
+    Pure function, no runtime state, no side effects. The runtime
     handles execution and the safety pipeline gates each emitted intent
     independently. Planners can take ``goal`` as a structured dict, a
     natural-language string, or any custom shape; ghostloop's bench

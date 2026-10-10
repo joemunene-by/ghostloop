@@ -1,8 +1,7 @@
 """MCP-server entry point for ghostloop. Drive a robot arm from any MCP client.
 
-Works with every MCP-aware assistant — Claude Desktop, Cursor, Continue,
-Cline, Zed, Gemini CLI, plus any future client that speaks the protocol —
-because MCP is the protocol; ghostloop is the server.
+Works with every MCP-aware assistant, Claude Desktop, Cursor, Continue,
+Cline, Zed, Gemini CLI, plus any future client that speaks the protocol,because MCP is the protocol; ghostloop is the server.
 
 Three transports, picked via GHOSTLOOP_TRANSPORT:
 
@@ -64,7 +63,7 @@ from ghostloop.primitives import move_to, pick, place, scan
 
 
 # ---------------------------------------------------------------------------
-# Configuration — edit these to match your setup.
+# Configuration, edit these to match your setup.
 # ---------------------------------------------------------------------------
 
 BACKEND = os.environ.get("GHOSTLOOP_BACKEND", "mock").lower()
@@ -111,7 +110,7 @@ def build_backend():
     if BACKEND == "mujoco":
         # pip install ghostloop[mujoco]
         from ghostloop.backends import MuJoCoBackend
-        # Drop a model path here — Franka, UR5e, Stretch, Spot, Aloha all
+        # Drop a model path here, Franka, UR5e, Stretch, Spot, Aloha all
         # work via the MuJoCo Menagerie. Pull one with:
         #   from ghostloop.backends import resolve_model
         #   path = resolve_model("franka")          # auto-clones first time
@@ -218,8 +217,7 @@ def main() -> None:
 
     # Default mode: run the MCP server. Transport picked from the env so
     # the same script powers desktop (stdio) AND remote / mobile clients
-    # (streamable-http). DON'T print to stdout outside MCP machinery —
-    # it'll corrupt the stdio protocol. Use stderr if you must.
+    # (streamable-http). DON'T print to stdout outside MCP machinery,    # it'll corrupt the stdio protocol. Use stderr if you must.
     from ghostloop.mcp_server import run_mcp_server
     transport = os.environ.get("GHOSTLOOP_TRANSPORT", "stdio").lower()
     host = os.environ.get("GHOSTLOOP_HOST", "127.0.0.1")

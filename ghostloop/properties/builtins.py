@@ -21,7 +21,7 @@ class StaysInsideWorkspace:
     Like GeofenceGate but evaluated post-hoc against the recorded trace,
     so it catches violations that a pre-emption gate missed (e.g. a drift
     in physics, a backend bug that ignored a target). Hard ERROR severity
-    by default — this is the kind of property that should ship-block.
+    by default, this is the kind of property that should ship-block.
     """
 
     min_corner: tuple[float, float, float] = (-1.0, -1.0, 0.0)
@@ -61,7 +61,7 @@ class NeverHoldsTwoObjects:
     """state.held_object must never become non-null while already non-null.
 
     Catches policies that emit two consecutive picks without an intervening
-    place — usually a planning bug, occasionally a physics-vs-state-tracker
+    place, usually a planning bug, occasionally a physics-vs-state-tracker
     desync.
     """
 
@@ -100,7 +100,7 @@ class NeverHoldsTwoObjects:
 class NoConsecutiveDuplicateIntents:
     """Catch policies that emit the same intent + args back-to-back.
 
-    Almost always a policy bug — at best wasted ops, at worst a stuck
+    Almost always a policy bug, at best wasted ops, at worst a stuck
     LLM emitting the same tool call in a tight loop. WARN severity by
     default (not always wrong; a deliberate observation-loop is fine).
     """
@@ -134,7 +134,7 @@ class NoConsecutiveDuplicateIntents:
 class NeverExceedsRate:
     """Per-primitive rate cap evaluated against the wall-clock timestamps.
 
-    Different from RateLimitGate which gates pre-emptively — this property
+    Different from RateLimitGate which gates pre-emptively, this property
     catches the case where a backend or LLM bypassed the gate (e.g. async
     backpressure failed). WARN by default.
     """

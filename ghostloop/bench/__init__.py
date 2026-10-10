@@ -1,4 +1,4 @@
-"""ghostloop.bench — statistically-rigorous episode benchmarking.
+"""ghostloop.bench, statistically-rigorous episode benchmarking.
 
 Mirrors the GhostBench pattern from GhostLM:
   - Wilson 95% confidence intervals for binomial proportions

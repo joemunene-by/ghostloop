@@ -7,10 +7,10 @@ the YAML profile lists the ``module:factory`` paths under
 
 Two examples shipped:
 
-  - ``dispense_pill(count)`` — sends a pill-dispenser command. Stub
+  - ``dispense_pill(count)``, sends a pill-dispenser command. Stub
     here; replace the ``backend.apply_action`` payload with your real
     integration (Arduino over serial, ROS 2 service call, vendor SDK).
-  - ``alert_nurse(message)`` — fires a nurse-call notification. Wire
+  - ``alert_nurse(message)``, fires a nurse-call notification. Wire
     to your hospital paging system / Slack / Twilio etc.
 
 Both demonstrate the contract: a Primitive is just (name, call,
@@ -62,8 +62,8 @@ def dispense_pill() -> Primitive:
             "[0, 50]; drug labels the medication for the trace log."
         ),
         arg_schema={
-            "count": "int — number of pills (0-50)",
-            "drug": "str — drug label / NDC code",
+            "count": "int, number of pills (0-50)",
+            "drug": "str, drug label / NDC code",
         },
     )
 
@@ -73,7 +73,7 @@ def alert_nurse() -> Primitive:
 
     def _call(backend: Backend, message: str = "", room: str = "") -> Result:
         # Replace with your paging integration. Twilio, Slack, PagerDuty,
-        # vendor REST API — whatever the hospital uses.
+        # vendor REST API, whatever the hospital uses.
         if not message:
             return Result(
                 status=ResultStatus.ERROR,
@@ -94,7 +94,7 @@ def alert_nurse() -> Primitive:
         call=_call,
         description="Send a notification to the nurse station.",
         arg_schema={
-            "message": "str — body of the notification",
-            "room": "str — patient room number, optional",
+            "message": "str, body of the notification",
+            "room": "str, patient room number, optional",
         },
     )

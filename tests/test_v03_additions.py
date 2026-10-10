@@ -262,7 +262,7 @@ class TestTraceReplay:
 
 
 # ----------------------------------------------------------------------
-# Menagerie loader (offline-only — git clone gated behind allow_clone).
+# Menagerie loader (offline-only, git clone gated behind allow_clone).
 # ----------------------------------------------------------------------
 
 
@@ -273,7 +273,7 @@ class TestMenagerieLoader:
         assert "stretch" in KNOWN_MODELS
 
     def test_resolve_unknown_without_clone_raises(self, tmp_path):
-        # Point at an empty dir, disable clone — should error cleanly.
+        # Point at an empty dir, disable clone, should error cleanly.
         with patch.dict(__import__("os").environ, {"MENAGERIE_PATH": str(tmp_path)}):
             with pytest.raises(MenagerieError):
                 # Bypass clone by using internal helper.

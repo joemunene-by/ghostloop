@@ -39,7 +39,7 @@ class Property(Protocol):
     """A declarative invariant over a Trace.
 
     Implementations inspect every event in the trace and decide whether
-    the invariant held. Pure function — no side effects, no state shared
+    the invariant held. Pure function, no side effects, no state shared
     between evaluations.
     """
 
@@ -89,7 +89,7 @@ class PropertyEngine:
             "|---|---|---|---:|",
         ]
         for r in results:
-            check = "✓" if r.held else "✗"
+            check = " " if r.held else " "
             lines.append(
                 f"| {r.name} | {r.severity.value} | {check} | {len(r.violations)} |"
             )

@@ -1,16 +1,16 @@
-"""Action smoothing — velocity / acceleration limits between consecutive moves.
+"""Action smoothing, velocity / acceleration limits between consecutive moves.
 
 VLA models and freshly-trained RL policies emit jerky action sequences:
 the controller commands a 30cm hop in one step then a 5mm tap the next.
 On real hardware that translates to torque spikes and overshoot. This
 module provides two complementary tools:
 
-- ``ActionSmoothingGate`` (PolicyGate) — denies a motion intent whose
+- ``ActionSmoothingGate`` (PolicyGate), denies a motion intent whose
   implied velocity / acceleration exceeds configured bounds. Pairs
   with the existing ForceCapGate to give a complete motion-limiting
   story (force AND speed AND smoothness all gated independently).
 
-- ``smooth_target(prev, target, max_step)`` — pure helper for
+- ``smooth_target(prev, target, max_step)``, pure helper for
   primitives that prefer to *clip* rather than *deny*. Useful inside
   a custom Primitive's ``call`` when you want safe motion regardless
   of policy behaviour.
@@ -106,7 +106,7 @@ class ActionSmoothingGate:
             self._last_target[primitive.name] = target
             self._last_time[primitive.name] = time.monotonic()
             self._last_velocity[primitive.name] = 0.0
-            return Decision.allow(self.name, "first call — no smoothing baseline")
+            return Decision.allow(self.name, "first call, no smoothing baseline")
         now = time.monotonic()
         dt = max(now - self._last_time[primitive.name], 1e-3)
         step = _distance(target, prev)

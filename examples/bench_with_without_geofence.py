@@ -2,8 +2,8 @@
 """Bench harness demo: paired comparison of two policies on the same episodes.
 
 Builds an 8-episode bench where a scripted policy tries to reach 8 different
-targets, half inside the workspace, half outside. Runs the bench twice — once
-with NO geofence gate, once WITH one — and uses paired comparison (Wilson
+targets, half inside the workspace, half outside. Runs the bench twice, once
+with NO geofence gate, once WITH one, and uses paired comparison (Wilson
 95% CIs + McNemar exact p) to quantify the safety pipeline's impact.
 
 Expected: the no-gate run hits everything (8/8); the geofenced run blocks

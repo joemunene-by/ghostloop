@@ -1,29 +1,29 @@
 """Temporal property combinators (Signal Temporal Logic).
 
 The properties shipped in ``builtins.py`` evaluate every event in
-isolation — point-in-time invariants like "position stays inside the
+isolation, point-in-time invariants like "position stays inside the
 workspace box". Real safety claims need TIME:
 
   - "force never exceeds N for more than 100ms" (windowed Always)
   - "within 5 seconds of detecting an obstacle, robot decelerates"
     (Eventually conditioned on a precursor)
   - "after a HITL approval, the next motion intent runs within 10s"
-    (Until — pending state until trigger arrives)
+    (Until, pending state until trigger arrives)
 
 This module adds three temporal operators that operate on a sliding
 window of events, defined by ``window_s`` seconds. Each takes either
 an ``EventPredicate`` (callable ``(TraceEvent) -> bool``) or another
 Property and combines via standard STL semantics:
 
-    Always(P, window_s)        — every event in the window satisfies P
-    Eventually(P, window_s)    — at least one event in the window satisfies P
-    Until(P, Q, window_s)      — P holds until Q within the window
+    Always(P, window_s), every event in the window satisfies P
+    Eventually(P, window_s), at least one event in the window satisfies P
+    Until(P, Q, window_s), P holds until Q within the window
 
 These return ``Property`` objects so they integrate with the existing
 ``PropertyEngine`` and combine with ``And`` / ``Or`` / ``Not`` from
 ``combinators.py`` to express arbitrarily nuanced safety claims.
 
-Built on stdlib only — no numpy / scipy. Each evaluator slides a deque
+Built on stdlib only, no numpy / scipy. Each evaluator slides a deque
 of pending events through the trace and decides held / violations.
 """
 
@@ -48,24 +48,24 @@ def _eval_predicate(p: EventPredicate | Property, ev: TraceEvent) -> bool:
     """
     if callable(p) and not hasattr(p, "check"):
         return bool(p(ev))
-    # It's a Property — wrap the event.
+    # It's a Property, wrap the event.
     sub_trace = Trace(events=[ev])
     return p.check(sub_trace).held
 
 
 # ---------------------------------------------------------------------------
-# Always(phi, window_s) — phi must hold at every event in the last window.
+# Always(phi, window_s), phi must hold at every event in the last window.
 # ---------------------------------------------------------------------------
 
 
 @dataclass
 class Always:
-    """STL G[0,W] phi — always within a window of W seconds, phi holds.
+    """STL G[0,W] phi, always within a window of W seconds, phi holds.
 
     Slides a window of events whose timestamps lie within the last
     ``window_s``. If any event in the window fails ``phi``, log a
     violation and the property is NOT held overall. With ``window_s=0``
-    this is a "for every event" property — equivalent to evaluating
+    this is a "for every event" property, equivalent to evaluating
     phi on each event independently.
     """
 
@@ -77,7 +77,7 @@ class Always:
 
     def check(self, trace: Trace) -> PropertyResult:
         violations: list[dict[str, Any]] = []
-        # Sliding window — for each event, check that phi held for every
+        # Sliding window, for each event, check that phi held for every
         # event whose timestamp is within window_s of the current one.
         for i, ev in enumerate(trace.events):
             cutoff = ev.timestamp - self.window_s
@@ -104,21 +104,20 @@ class Always:
 
 
 # ---------------------------------------------------------------------------
-# Eventually(phi, window_s) — phi must hold at least once in the last window.
+# Eventually(phi, window_s), phi must hold at least once in the last window.
 # ---------------------------------------------------------------------------
 
 
 @dataclass
 class Eventually:
-    """STL F[0,W] phi — eventually within a window of W seconds, phi holds.
+    """STL F[0,W] phi, eventually within a window of W seconds, phi holds.
 
     For each event, checks that AT LEAST ONE event in the past
     ``window_s`` (including the current event) satisfies ``phi``.
     Useful for "responsiveness" claims: 'after a brake intent the
     actual velocity must drop within 1s'.
 
-    With ``window_s == 0`` this is "phi holds at the current event" —
-    same as Always with window_s=0.
+    With ``window_s == 0`` this is "phi holds at the current event",    same as Always with window_s=0.
     """
 
     phi: EventPredicate | Property
@@ -154,13 +153,13 @@ class Eventually:
 
 
 # ---------------------------------------------------------------------------
-# Until(phi, psi, window_s) — phi holds until psi happens, all within window.
+# Until(phi, psi, window_s), phi holds until psi happens, all within window.
 # ---------------------------------------------------------------------------
 
 
 @dataclass
 class Until:
-    """STL phi U[0,W] psi — phi holds at every step until psi triggers.
+    """STL phi U[0,W] psi, phi holds at every step until psi triggers.
 
     For each "anchor" event ev_i, looks at events ev_i, ev_{i+1}, ...
     within ``window_s`` seconds. The property holds for that anchor iff
@@ -222,7 +221,7 @@ class Until:
 
 
 # ---------------------------------------------------------------------------
-# Helper predicate constructors — convenient for inline use without writing
+# Helper predicate constructors, convenient for inline use without writing
 # named lambdas. Pre-baked ones cover the common shapes; assemble custom
 # predicates by composing these or just writing a callable.
 # ---------------------------------------------------------------------------
@@ -258,8 +257,7 @@ def result_status(status: str) -> EventPredicate:
 def state_field_below(field_path: str, threshold: float) -> EventPredicate:
     """Predicate: ``state_after[<dotted-path>] < threshold``.
 
-    Misses (key absent) are treated as not satisfying the predicate —
-    i.e. the property does NOT hold. That's the safe default for "force
+    Misses (key absent) are treated as not satisfying the predicate,    i.e. the property does NOT hold. That's the safe default for "force
     must stay below N": absence of a force reading is suspicious.
     """
     parts = field_path.split(".")

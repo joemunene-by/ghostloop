@@ -1,4 +1,4 @@
-"""Safe-RL training harness — train policies under the ghostloop safety pipeline.
+"""Safe-RL training harness, train policies under the ghostloop safety pipeline.
 
 Constrained-MDP training is the right shape for embodied agents: the
 agent maximises reward, but the safety pipeline imposes hard
@@ -16,8 +16,7 @@ JAX, NumPyRO, scripted) can plug into:
   - PolicyAdapter Protocol is the contract every policy must satisfy
     (callable obs -> action, callable update(rollout)).
 
-The harness is pure-stdlib + optional numpy. No PyTorch / JAX dep —
-your policy provides those.
+The harness is pure-stdlib + optional numpy. No PyTorch / JAX dep,your policy provides those.
 """
 
 from .core import (

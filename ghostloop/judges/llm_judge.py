@@ -1,4 +1,4 @@
-"""LLMJudge — score traces with an OpenAI-compatible chat model.
+"""LLMJudge, score traces with an OpenAI-compatible chat model.
 
 Hand a recorded ``Trace`` to an LLM, ask "did the robot do the right
 thing?", parse a structured rubric. The classic LLM-as-judge pattern
@@ -6,8 +6,7 @@ applied to robot behaviour.
 
 The judge is policy-agnostic: pass any callable matching ``Client``
 that takes a list of chat messages and returns the assistant's reply.
-GhostLM's chat endpoint, OpenAI's, Anthropic's, an internal proxy —
-they all fit. Default rubric covers four criteria (task completion,
+GhostLM's chat endpoint, OpenAI's, Anthropic's, an internal proxy,they all fit. Default rubric covers four criteria (task completion,
 safety adherence, efficiency, recoverability) and asks for a JSON
 response that ``parse_judgement`` validates and converts to a typed
 ``LLMJudgement`` dataclass.

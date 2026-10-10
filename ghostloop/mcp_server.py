@@ -3,15 +3,15 @@
 Claude Desktop, Cursor, any MCP-aware agent can drive a ghostloop runtime
 through the safety pipeline. Same FastMCP pattern GhostLM uses.
 
-Conditional import — package itself imports cleanly without ``mcp``;
+Conditional import, package itself imports cleanly without ``mcp``;
 ``run_mcp_server(...)`` raises ImportError with install hint at call time.
 
   pip install ghostloop[mcp]
 
 Three tools exposed by default:
-  list_primitives()                — MCP discovery hook for the agent
-  step(name, args, rationale)     — one runtime.step under safety pipeline
-  recent_trace(n=10)               — last n events from the active trace
+  list_primitives(), MCP discovery hook for the agent
+  step(name, args, rationale), one runtime.step under safety pipeline
+  recent_trace(n=10), last n events from the active trace
 
 Plus auto-generated tools for every Primitive in the registry, so the
 agent can call ``move_to(x, y, z)`` directly without the indirection.
@@ -67,7 +67,7 @@ def build_mcp_server(
         "OR via the per-primitive auto-tools. Every action passes through "
         "the configured safety policy pipeline (geofence / rate-limit / "
         "force-cap / human-in-the-loop). Blocked actions return a "
-        "structured BLOCKED result with the gate name and reason — read "
+        "structured BLOCKED result with the gate name and reason, read "
         "those carefully and adjust your plan accordingly."
     )
     server = FastMCP(server_name, instructions=instructions or default_instructions)
@@ -114,7 +114,7 @@ def build_mcp_server(
 
     @server.tool()
     def state() -> dict[str, Any]:
-        """Current backend snapshot — pose, joints, held object, etc."""
+        """Current backend snapshot, pose, joints, held object, etc."""
         return runtime.backend.snapshot()
 
     # ------------------------------------------------------------------
@@ -170,20 +170,20 @@ def run_mcp_server(
 
     Three transports supported by FastMCP:
 
-      - ``stdio`` (default) — desktop clients spawn the server as a
+      - ``stdio`` (default), desktop clients spawn the server as a
         subprocess and speak MCP through stdin/stdout. Right for
         Claude Desktop, Cursor, Continue, Cline, Zed, Gemini CLI on
         the same machine.
-      - ``sse`` — server-sent events over HTTP. The server binds to
+      - ``sse``, server-sent events over HTTP. The server binds to
         ``host:port`` and remote clients connect via URL. Right for
         mobile + cross-machine setups + browser-based MCP clients.
-      - ``streamable-http`` — the newer HTTP transport (replaces SSE
+      - ``streamable-http``, the newer HTTP transport (replaces SSE
         going forward). Same host/port shape; preferred when both
         ends speak it.
 
     Pick stdio for desktop, streamable-http for mobile / remote. The
     server, the runtime, and every safety gate are unchanged across
-    transports — only the wire protocol differs.
+    transports, only the wire protocol differs.
     """
     server = build_mcp_server(
         runtime, server_name=server_name, instructions=instructions,
@@ -197,7 +197,7 @@ def run_mcp_server(
             server.settings.host = host
             server.settings.port = port
         except AttributeError:
-            # Older FastMCP — fall back to env vars before .run().
+            # Older FastMCP, fall back to env vars before .run().
             import os as _os
             _os.environ.setdefault("FASTMCP_HOST", host)
             _os.environ.setdefault("FASTMCP_PORT", str(port))
@@ -211,8 +211,8 @@ def _cli_main() -> None:
     """``python -m ghostloop.mcp_server`` entry point.
 
     Picks profile / backend / transport from env vars (same scheme as
-    examples/mcp_robot.py). Exists so package installers — and Smithery
-    in particular — can launch the server with one command line:
+    examples/mcp_robot.py). Exists so package installers, and Smithery
+    in particular, can launch the server with one command line:
 
         python -m ghostloop.mcp_server
 

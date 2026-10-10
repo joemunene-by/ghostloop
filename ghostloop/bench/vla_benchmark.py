@@ -7,11 +7,11 @@ that pairs the policy against published baselines.
 
 Two surfaces:
 
-  - ``VLABenchmarkSuite`` — declarative bench definition: an Episode
+  - ``VLABenchmarkSuite``, declarative bench definition: an Episode
     catalogue + a list of ``BaselineSpec`` records carrying published
     pass-rate numbers for OpenVLA / π0 / etc. Run ``.run(policy)``
     and compare against every baseline at once.
-  - ``BaselineSpec`` — published numbers from the literature (paper
+  - ``BaselineSpec``, published numbers from the literature (paper
     title, n, pass rate, bench label). Used by the report renderer
     to put the new policy in context.
 
@@ -121,7 +121,7 @@ class VLABenchmarkResult:
     def render_md(self) -> str:
         lo, hi = self.run_report.ci
         lines = [
-            f"# VLA Benchmark — {self.bench_label}",
+            f"# VLA Benchmark, {self.bench_label}",
             "",
             f"**{self.policy_label}**: {self.passed}/{self.n}"
             f" = {self.pass_rate:.1%}  (95% CI [{lo:.1%}, {hi:.1%}])",
@@ -140,7 +140,7 @@ class VLABenchmarkResult:
                 f" {b.n} | {cmp['delta']:+.1%} | {cmp['cohens_h']:.3g} ({cmp['label']}) | {cite} |"
             )
         lines.append("")
-        lines.append("**Note**: comparisons against published baselines are *unpaired* — we ran "
+        lines.append("**Note**: comparisons against published baselines are *unpaired*, we ran "
                      "different episodes than the original papers. Cohen's h is the right "
                      "effect-size metric here; McNemar is reserved for paired-comparison runs.")
         return "\n".join(lines) + "\n"
@@ -156,7 +156,7 @@ def catalogue_published() -> dict[str, list[BaselineSpec]]:
 
     Numbers are pulled from the public papers. Cite responsibly: these
     are reference baselines for *qualitative* comparison, not perfect
-    head-to-head — different episode pools, different physics, often
+    head-to-head, different episode pools, different physics, often
     different definitions of "pass".
     """
     return {

@@ -37,7 +37,7 @@ _PLANNER_SYSTEM = (
     "{name: <primitive>, args: {...}, rationale: <why>}. The runtime will "
     "execute every step under a fail-closed safety policy pipeline; "
     "blocked steps surface in the trace. Use only the primitives in the "
-    "tool registry. Be concise — one well-formed plan beats five sloppy "
+    "tool registry. Be concise, one well-formed plan beats five sloppy "
     "ones."
 )
 

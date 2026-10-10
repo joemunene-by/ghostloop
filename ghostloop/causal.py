@@ -1,10 +1,10 @@
-"""Causal failure attribution — find the events responsible for a violation.
+"""Causal failure attribution, find the events responsible for a violation.
 
 When a property fails on a recorded trace, the obvious question is
 "which events caused it?". The simple answer is "the one whose
 state_after first violated the predicate", but that's the SYMPTOM
 event, not necessarily the CAUSE. The actual cause is whichever
-upstream events SET UP the conditions for the symptom — they may be
+upstream events SET UP the conditions for the symptom, they may be
 many steps back.
 
 This module ships an ablation-based attribution algorithm:
@@ -19,9 +19,9 @@ This module ships an ablation-based attribution algorithm:
 Each event gets a ``necessity`` score in [0, 1]: the fraction of the
 post-E_i prefix where the property holds when E_i is masked out. By
 sorting events by descending necessity, the user gets a ranked list
-of "blame" — the highest-scored event is the most-likely root cause.
+of "blame", the highest-scored event is the most-likely root cause.
 
-This is leave-one-out — O(N) property evaluations per attribution.
+This is leave-one-out, O(N) property evaluations per attribution.
 For shorter traces (under 200 events) it's fast enough to run
 synchronously; for longer ones, sample uniformly via ``max_events``.
 
@@ -81,7 +81,7 @@ class FailureAnalysis:
 
     def render_md(self) -> str:
         lines = [
-            f"# Causal failure analysis — `{self.property_name}`",
+            f"# Causal failure analysis, `{self.property_name}`",
             "",
             f"- Property held: {self.held}",
             f"- Events: {self.n_events}",
@@ -93,7 +93,7 @@ class FailureAnalysis:
             "|---:|---|---|---:|:---:|",
         ]
         for c in self.top_k(5):
-            held_mark = "✓" if c.became_held else "✗"
+            held_mark = " " if c.became_held else " "
             lines.append(
                 f"| {c.event.step} | {c.event.intent.name} | "
                 f"{c.event.decision.action.value} | {c.necessity:.3f} | {held_mark} |"
@@ -116,7 +116,7 @@ def attribute_failure(
     are assigned 0.0 (independent of the failure).
 
     If the property already holds on the full trace, returns an empty
-    attribution — there's no failure to attribute.
+    attribution, there's no failure to attribute.
 
     Args:
         trace: the failing trace.
@@ -187,7 +187,7 @@ def minimal_cause_set(
     event whose removal most reduces violation count.
 
     Returns ``None`` if no cause set up to ``max_set_size`` is found.
-    Useful when a single-event ablation isn't enough — multi-event
+    Useful when a single-event ablation isn't enough, multi-event
     causal patterns (e.g. "two specific moves in sequence are required
     to violate the property") need this.
     """

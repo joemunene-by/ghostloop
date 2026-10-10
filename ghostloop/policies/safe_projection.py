@@ -1,4 +1,4 @@
-"""Safe-action projection — repair denied actions instead of just rejecting them.
+"""Safe-action projection, repair denied actions instead of just rejecting them.
 
 The fail-closed pipeline blocks unsafe actions, which is the right
 default for hard constraints. But for many cases it's better to
@@ -11,7 +11,7 @@ constraint.
   ``project_to_workspace(intent, workspace)``
       For motion intents with x/y/z targets, projects the target into
       the workspace bounding box AND outside any sphere obstacles.
-      Pure analytic — clamping to AABB + radial pushout for spheres.
+      Pure analytic, clamping to AABB + radial pushout for spheres.
       Returns either the original intent (already valid) or a new
       Intent with corrected args + a ``"projected_from": orig_target``
       field for auditability.

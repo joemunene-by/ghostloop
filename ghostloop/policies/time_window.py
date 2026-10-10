@@ -4,7 +4,7 @@ Common ops constraint: the warehouse robot can drive 06:00-22:00 local
 but not overnight; the agricultural robot only operates between sunrise
 and sunset; the prototype lab arm is only allowed to move during
 business hours so a human is around. The gate uses the system's local
-clock by default — pass an explicit ``now`` callable for testing or for
+clock by default, pass an explicit ``now`` callable for testing or for
 robots running in different timezones from the operator.
 
 Windows are open-ended on either side; pass-through for primitives not

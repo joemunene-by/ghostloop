@@ -97,7 +97,7 @@ class TestDeltaXYZDecoder:
         first = d.decode([0, 0, 0, 0, 0, 0, 1.0], {"position": [0, 0, 0]})
         second = d.decode([0, 0, 0, 0, 0, 0, 1.0], {"position": [0, 0, 0]})
         assert first is not None and first.name == "pick"
-        assert second is None  # gripper still closed → no transition → no-op
+        assert second is None  # gripper still closed to no transition to no-op
 
     def test_short_action_vector_returns_none(self):
         d = DeltaXYZDecoder()
@@ -216,7 +216,7 @@ class TestObstacleAvoidanceGate:
             registry=_registry(),
             policy_pipeline=PolicyPipeline(gates=[ObstacleAvoidanceGate(workspace=ws)]),
         )
-        # scan has no x/y/z — gate passes through.
+        # scan has no x/y/z, gate passes through.
         result = rt.step(Intent("scan", {"radius": 0.5}))
         assert result.ok
 
@@ -295,7 +295,7 @@ class TestPropertyEngine:
         rt.step(Intent("pick", {"object_id": "a"}))
         # Force the backend to a different object (simulating a backend bug).
         rt.backend.held_object = "a"
-        # Now manually call pick — it'll error normally; but if we set held_object=None
+        # Now manually call pick, it'll error normally; but if we set held_object=None
         # first then pick, we get a clean state. To trigger the violation we need a
         # state_before non-null + state_after non-null with different value.
         # Easier: hand-craft a Trace.

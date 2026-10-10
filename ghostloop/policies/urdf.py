@@ -1,4 +1,4 @@
-"""URDF workspace builder — auto-derive a ``WorkspaceModel`` from a URDF.
+"""URDF workspace builder, auto-derive a ``WorkspaceModel`` from a URDF.
 
 Bringing your own robot to ghostloop has been a four-step manual chore:
 read the URDF, eyeball the joint limits, sketch the reachable volume,
@@ -9,15 +9,14 @@ obstacles. This module collapses those four steps into one call:
     gate = ObstacleAvoidanceGate(workspace=workspace)
 
 URDF (Unified Robot Description Format) is XML. Every commonly-used
-arm / mobile robot ships one. This parser is intentionally narrow —
-it reads only what the workspace model needs:
+arm / mobile robot ships one. This parser is intentionally narrow,it reads only what the workspace model needs:
 
   - ``<joint>`` elements with ``type="revolute"`` or ``"prismatic"``
     and ``<limit lower="..." upper="...">`` to define joint ranges.
   - ``<link>``'s ``<collision><geometry><box|sphere|cylinder>`` to
     pull each link's shape and add it as an obstacle.
   - The ``<origin xyz="x y z">`` of each link to place obstacles in
-    world coordinates (without forward kinematics — assumes static
+    world coordinates (without forward kinematics, assumes static
     pose; for moving links the obstacle list is conservative).
 
 It deliberately avoids forward kinematics: solving joint configs to
@@ -25,7 +24,7 @@ real geometry would pull a kinematics dependency. For a static fixture
 (table, walls, mounted equipment) this is exact; for moving links it
 yields a conservative bounding model that's still useful.
 
-Pure stdlib (``xml.etree.ElementTree`` + ``math``) — zero new deps.
+Pure stdlib (``xml.etree.ElementTree`` + ``math``), zero new deps.
 """
 
 from __future__ import annotations
@@ -79,7 +78,7 @@ def _link_to_obstacles(
     """Best-effort extract collision geometries as obstacles (in link frame).
 
     Without forward kinematics we treat the obstacle as anchored at
-    the URDF's collision-origin xyz — fine for static fixtures, a
+    the URDF's collision-origin xyz, fine for static fixtures, a
     conservative approximation for moving links.
     """
     obs: list[AxisAlignedBox | Sphere] = []
@@ -134,7 +133,7 @@ def _link_to_obstacles(
         mesh = geometry.find("mesh")
         if mesh is not None:
             warnings.append(
-                f"link {link_name!r}: <mesh> geometry skipped — load via "
+                f"link {link_name!r}: <mesh> geometry skipped, load via "
                 "trimesh externally and add an inflated AABB if you need it"
             )
     return obs
@@ -158,7 +157,7 @@ def workspace_from_urdf(
     collision obstacle.
 
     ``floor_at`` (default 0.0) clamps the lower-z bound to that height
-    — common since most URDFs centre links and the world floor is
+, common since most URDFs centre links and the world floor is
     z=0. Pass ``None`` to disable.
 
     Args:
@@ -169,7 +168,7 @@ def workspace_from_urdf(
 
     Returns:
         (workspace, stats) tuple. ``stats`` carries diagnostics like
-        n_joints / parser warnings — check warnings if obstacles look
+        n_joints / parser warnings, check warnings if obstacles look
         sparse (mesh geometries are silently skipped).
 
     Raises:

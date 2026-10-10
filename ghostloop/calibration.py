@@ -1,4 +1,4 @@
-"""System identification — fit a simple dynamics model from real captures.
+"""System identification, fit a simple dynamics model from real captures.
 
 When you bring your own robot, the safety pipeline needs reasonable
 caps on force / velocity / acceleration. The defaults in
@@ -8,7 +8,7 @@ your specific arm. This module helps capture them by:
   1. Driving the robot through a small calibration sequence
      (``calibration_episode``).
   2. Recording (action_command, observed_state) pairs.
-  3. Fitting a simple linear model — least-squares without numpy
+  3. Fitting a simple linear model, least-squares without numpy
      fallback to plain math when numpy is missing.
   4. Recommending workspace bounds + force / velocity / acceleration
      caps from the empirical data, with safety margins.
@@ -172,7 +172,7 @@ class CalibrationReport:
 
     def render_md(self) -> str:
         ws = (
-            f"  - workspace: `{self.workspace_min}` → `{self.workspace_max}`"
+            f"  - workspace: `{self.workspace_min}` to `{self.workspace_max}`"
             if self.workspace_min is not None else "  - workspace: (no positional data captured)"
         )
         lines = [
