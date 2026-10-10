@@ -17,14 +17,6 @@ A tool-using agent runtime, fail-closed safety pipeline, statistically-rigorous 
 [![Tests](https://img.shields.io/badge/tests-411%2C%20extras%20gated-14B8A6.svg)](#)
 [![CI](https://github.com/joemunene-by/ghostloop/actions/workflows/ci.yml/badge.svg)](https://github.com/joemunene-by/ghostloop/actions/workflows/ci.yml)
 
-<br/>
-
-<a href="assets/ghostloop-story.mp4">
- <img src="assets/story-poster.png" alt="ghostloop, the film. Drone control, fail-closed safety, GhostLM, and the ghost family." width="820">
-</a>
-
-<sub>▶ <b><a href="assets/ghostloop-story.mp4">Watch the film</a></b> · 2 min, narrated &nbsp;·&nbsp; or jump to the <b><a href="assets/ghostloop-connect.mp4">80-second hands-on walkthrough</a></b></sub>
-
 </div>
 
 ---
