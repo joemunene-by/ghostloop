@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.1.0] - 2026-10-01 - Real arm control, backend plugins, cross-backend bench, NaN hardening
+## [1.1.0] - 2026-10-20 - Real arm control, backend plugins, cross-backend bench, NaN hardening
 
 ### Safety fixes (behaviour changes)
 
@@ -15,6 +15,11 @@
 - `ForceCapGate` now denies a capped key whose value isn't a number
   (`force="high"`). It used to skip it silently.
 - `MockBackend` `move_to` returns `ERROR` for non-finite targets.
+- **A policy gate that raises now fails closed.** If a gate's `check()` threw (an
+  LLM gate hitting a network error, say), the exception propagated out of
+  `Runtime.step` and crashed the runtime with no trace record. `PolicyPipeline.check`
+  now catches it and returns a `deny` for that gate, so an erroring gate blocks
+  the action instead of skipping the check.
 
 ### MuJoCo: real Cartesian control
 
