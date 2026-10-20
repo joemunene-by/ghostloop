@@ -6,7 +6,7 @@ name: Deploy HuggingFace Space
 # automatically once new files are pushed to its remote.
 #
 # REQUIRES (one-time, in this repo's Settings → Secrets and variables → Actions):
-#   HF_TOKEN — a HuggingFace write-access token (User Access Token,
+#   HF_TOKEN: a HuggingFace write-access token (User Access Token,
 #              role: Write). Generate at https://huggingface.co/settings/tokens.
 #              The Space gets created on first push if it doesn't exist
 #              yet (HF_USERNAME below must own the repo).

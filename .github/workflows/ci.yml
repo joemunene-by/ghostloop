@@ -31,7 +31,7 @@ jobs:
       - name: Install ghostloop with dev extras
         run: |
           python -m pip install --upgrade pip
-          # Core install only — backend extras (mujoco / pybullet / gym /
+          # Core install only: backend extras (mujoco / pybullet / gym /
           # ros2 / mcp / dashboard / otel) are gated and their tests skip
           # cleanly when those libs aren't present. Install [mcp,dashboard]
           # so the dashboard + MCP smoke paths get exercised.

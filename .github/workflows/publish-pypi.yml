@@ -1,7 +1,7 @@
 name: Publish to PyPI
 
 # Triggers on a pushed tag matching v*. Tag a release like:
-#   git tag -a v1.0.1 -m "v1.0.1 — bugfix"
+#   git tag -a v1.0.1 -m "v1.0.1: bugfix"
 #   git push origin v1.0.1
 # and this workflow builds + uploads to PyPI via Trusted Publishing.
 #
@@ -59,7 +59,7 @@ jobs:
           echo "ghostloop/__init__.py: $PKG_VERSION"
           echo "git tag: $TAG_VERSION"
           if [ "$PYPROJECT_VERSION" != "$TAG_VERSION" ] || [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
-            echo "::error::Version mismatch — fix pyproject.toml + ghostloop/__init__.py to match the tag and re-tag."
+            echo "::error::Version mismatch: fix pyproject.toml + ghostloop/__init__.py to match the tag and re-tag."
             exit 1
           fi
 
@@ -77,7 +77,7 @@ jobs:
       - name: Publish to PyPI via Trusted Publishing
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          # No password / token field — OIDC handles authentication.
+          # No password / token field. OIDC handles authentication.
           # If TestPyPI dry-runs are needed, swap the repository-url:
           # repository-url: https://test.pypi.org/legacy/
           print-hash: true
@@ -166,8 +166,8 @@ jobs:
         # so non-prereleases auto-promote to "Latest".
         uses: softprops/action-gh-release@v3
         with:
-          # ref_name is already the tag like "v1.0.3" — don't double the v.
-          name: "${{ github.ref_name }} — ghostloop"
+          # ref_name is already the tag like "v1.0.3", so don't double the v.
+          name: "ghostloop ${{ github.ref_name }}"
           tag_name: ${{ github.ref_name }}
           body_path: ${{ steps.notes.outputs.notes_file }}
           files: dist/*
