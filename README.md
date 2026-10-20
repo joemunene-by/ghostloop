@@ -1,6 +1,9 @@
 <div align="center">
 
-<img src="assets/ghostloop_wordmark.png" alt="ghostloop" width="560">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/ghostloop_wordmark_dark.png">
+  <img src="assets/ghostloop_wordmark.png" alt="ghostloop" width="560">
+</picture>
 
 **The agent loop, embodied.**
 
