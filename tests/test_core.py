@@ -95,6 +95,20 @@ class TestPolicyPipeline:
         assert result.status.value == "blocked"
         assert "deny_list" in result.message
 
+    def test_gate_that_raises_fails_closed(self):
+        class BoomGate:
+            name = "boom"
+
+            def check(self, intent, primitive):
+                raise RuntimeError("gate backend unreachable")
+
+        rt = _runtime(gates=[BoomGate()])
+        result = rt.step(Intent("move_to", {"x": 0.5, "y": 0.5, "z": 0.5}))
+        # A gate that errors must deny, not crash the runtime or let the action through.
+        assert result.status.value == "blocked"
+        assert "boom" in result.message and "RuntimeError" in result.message
+        assert rt.backend.position == (0.0, 0.0, 0.0)
+
     def test_geofence_blocks_outside(self):
         rt = _runtime(gates=[
             GeofenceGate(min_corner=(-1, -1, 0), max_corner=(1, 1, 1)),

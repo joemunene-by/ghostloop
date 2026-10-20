@@ -230,7 +230,13 @@ class PolicyPipeline:
             return rejected
         passed: list[str] = []
         for gate in self.gates:
-            decision = gate.check(intent, primitive)
+            try:
+                decision = gate.check(intent, primitive)
+            except Exception as exc:  # noqa: BLE001 - a gate that errors must fail closed, not crash the runtime
+                return Decision.deny(
+                    getattr(gate, "name", "<gate>"),
+                    f"gate raised {type(exc).__name__}: {exc}",
+                )
             if decision.action is DecisionAction.DENY:
                 return decision
             passed.append(gate.name)
