@@ -11,13 +11,13 @@ A tool-using agent runtime, fail-closed safety pipeline, statistically-rigorous 
 
 **Now live:** [`pip install ghostloop`](https://pypi.org/project/ghostloop/) · [interactive demo](https://huggingface.co/spaces/Ghostgim/ghostloop-demo) · 12 releases · 411 tests · MIT.
 
-[![PyPI](https://img.shields.io/pypi/v/ghostloop?color=14B8A6&label=pypi)](https://pypi.org/project/ghostloop/)
-[![Downloads](https://static.pepy.tech/badge/ghostloop/month)](https://pepy.tech/project/ghostloop)
-[![HF Space](https://img.shields.io/badge/%20live%20demo-Ghostgim%2Fghostloop--demo-FFD21E)](https://huggingface.co/spaces/Ghostgim/ghostloop-demo)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Status](https://img.shields.io/badge/status-v1.1.0%20production-14B8A6.svg)](#)
-[![Tests](https://img.shields.io/badge/tests-411%2C%20extras%20gated-14B8A6.svg)](#)
+[![PyPI](https://img.shields.io/pypi/v/ghostloop?style=flat-square&color=1f2328&labelColor=1f2328&label=pypi)](https://pypi.org/project/ghostloop/)
+[![Downloads](https://img.shields.io/pepy/dt/ghostloop?style=flat-square&color=1f2328&labelColor=1f2328&label=downloads)](https://pepy.tech/project/ghostloop)
+[![Live demo](https://img.shields.io/badge/live_demo-Ghostgim%2Fghostloop--demo-1f2328?style=flat-square&labelColor=1f2328)](https://huggingface.co/spaces/Ghostgim/ghostloop-demo)
+[![License](https://img.shields.io/badge/license-MIT-1f2328?style=flat-square&labelColor=1f2328)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10%2B-1f2328?style=flat-square&labelColor=1f2328)](https://www.python.org/)
+[![Status](https://img.shields.io/badge/status-v1.1.0_production-1f2328?style=flat-square&labelColor=1f2328)](#)
+[![Tests](https://img.shields.io/badge/tests-411%2C_extras_gated-1f2328?style=flat-square&labelColor=1f2328)](#)
 [![CI](https://github.com/joemunene-by/ghostloop/actions/workflows/ci.yml/badge.svg)](https://github.com/joemunene-by/ghostloop/actions/workflows/ci.yml)
 
 </div>
